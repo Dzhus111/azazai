@@ -49,13 +49,13 @@ class ApiController extends Controller
                 exit;
             }
         }
-        $query = "SELECT event_name as name,
-         description, user_id as userId, address, required_people_number as peapleNumber, 
+        $query = "SELECT event_id as id, event_name as name,
+         description, user_id as userId, address, required_people_number as peopleNumber, 
          meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
         if($timeOut === 'true'){
-            $query = "SELECT event_name as name,
-         description, user_id as userId, address, required_people_number as peapleNumber, 
-         meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DSEC LIMIT $offset, $limit";
+            $query = "SELECT event_id as id, event_name as name,
+         description, user_id as userId, address, required_people_number as peopleNumber, 
+         meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DESC LIMIT $offset, $limit";
         }
         if(!isset($limit)){
             $error->error = 'BlankEventListLimit';
