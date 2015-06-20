@@ -110,7 +110,7 @@ class ApiController extends Controller
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
-    public function actionCreate()
+    public function actionCreateEvent()
     {   
         $model = new Events();
         $data = array();
@@ -136,10 +136,12 @@ class ApiController extends Controller
         $model->load($modelData);
         if($model->save(false)){
             $jsonData =['success' => true];
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE);
             exit;
         }else{
             $jsonData =['success' => false];
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE);
             exit;
             }
