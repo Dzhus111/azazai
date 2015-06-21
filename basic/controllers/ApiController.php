@@ -1,7 +1,6 @@
 <?php
 
 namespace app\controllers;
-use PDO;
 use Yii;
 use yii\helpers\Error;
 use yii\db\Query;
@@ -135,7 +134,7 @@ class ApiController extends Controller
         $modelData= ['Events' => $data];
         $model->load($modelData);
         if($model->save(false)){
-            $jsonData =['success' => true];
+            $jsonData =['success' => true,'id' => $model->event_id];
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE);
             exit;
