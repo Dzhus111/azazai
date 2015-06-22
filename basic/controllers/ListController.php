@@ -3,6 +3,8 @@
 namespace app\controllers;
 
 use Yii;
+use yii\helpers\OAuthVK;
+use yii\helpers\Utils;
 use app\models\Events;
 use app\models\EventsModel;
 use yii\web\Controller;
@@ -30,8 +32,34 @@ class ListController extends Controller
      * Lists all Events models.
      * @return mixed
      */
+     
+     public function actionVk(){
+         session_start();
+        if (!empty($_GET['error'])) {
+    // Пришёл ответ с ошибкой. Например, юзер отменил авторизацию.
+    die($_GET['error']);
+} elseif (empty($_GET['code'])) {
+    // Самый первый запрос
+    OAuthVK::goToAuth();
+} else {
+    /*
+     * На данном этапе можно проверить зарегистрирован ли у вас ВК-юзер с id = OAuthVK::$userId
+     * Если да, то можно просто авторизовать его и не запрашивать его данные.
+     */
+    //echo $_SESSION['token'].'<br/>';
+    $user = OAuthVK::getUser();
+    print_r($user);
+    /*
+     * Вот и всё - мы узнали основные данные авторизованного юзера.
+     * $user в этом примере состоит из трёх полей: uid, first_name, last_name.
+     * Делайте с ними что угодно - регистрируйте, авторизуйте, ругайте...
+     */
+}
+     }
+     
     public function actionIndex()
-    {
+    {   
+       
         $searchModel = new EventsModel();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
