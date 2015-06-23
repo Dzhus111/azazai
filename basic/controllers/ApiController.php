@@ -40,6 +40,13 @@ class ApiController extends Controller
         }
         $time = time();
         if(isset($queryParams['dateFilter'])){
+            if(empty($queryParams['dateFilter'])){
+                $error->error = 'BlankFilter';
+                $error->message = 'Filter fild is blank';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
             if(is_numeric($queryParams['dateFilter'])){
                 $time = $queryParams['dateFilter'];
             }else{
@@ -58,7 +65,7 @@ class ApiController extends Controller
          description, user_id as userId, address, required_people_number as peopleNumber, 
          meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DESC LIMIT $offset, $limit";
         }
-        if(!isset($limit)){
+        if(!isset($limit) || empty($limit)){
             $error->error = 'BlankEventListLimit';
             $error->message = 'Event list limit name are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -72,7 +79,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($offset)){
+        if(!isset($offset) || empty($offset)){
             $error->error = 'BlankEventListOffset';
             $error->message = 'Event list offset name are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -218,7 +225,7 @@ class ApiController extends Controller
     
     private function validateEventsParams($queryParams){
         $error = new Error;
-        if(!isset($queryParams['name'])){
+        if(!isset($queryParams['name']) || empty($queryParams['name'])){
             $error->error = 'BlankName';
             $error->message = 'Event name are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -238,7 +245,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($queryParams['description'])){
+        if(!isset($queryParams['description']) || empty($queryParams['description'])){
             $error->error = 'BlankDescriptiont';
             $error->message = 'Event description are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -259,7 +266,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($queryParams['address'])){
+        if(!isset($queryParams['address']) || empty($queryParams['address'])){
             $error->error = 'BlankAddress';
             $error->message = 'Event address  are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -280,7 +287,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($queryParams['peopleNumber'])){
+        if(!isset($queryParams['peopleNumber']) || empty($queryParams['peopleNumber'])){
             $error->error = 'BlankPeopleNumber';
             $error->message = 'Event name are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -294,7 +301,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($queryParams['date'])){
+        if(!isset($queryParams['date']) || empty($queryParams['date'])){
             $error->error = 'BlankDate';
             $error->message = 'Event date are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -315,7 +322,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($queryParams['tags'])){
+        if(!isset($queryParams['tags']) || empty($queryParams['tags'])){
             $error->error = 'BlankTags';
             $error->message = 'Event tags are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -329,7 +336,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($queryParams['token'])){
+        if(!isset($queryParams['token']) || empty($queryParams['token'])){
             $error->error = 'BlankToken';
             $error->message = 'Token  are required';
             header('Content-Type: application/json; charset=utf-8');
