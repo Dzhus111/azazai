@@ -287,7 +287,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($queryParams['peopleNumber']) || empty($queryParams['peopleNumber'])){
+        if(!isset($queryParams['peopleNumber']) || (empty($queryParams['peopleNumber'])&&(int)$queryParams['peopleNumber'] != 0)){
             $error->error = 'BlankPeopleNumber';
             $error->message = 'Event name are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -295,8 +295,22 @@ class ApiController extends Controller
             exit;
         }
         elseif(!is_numeric($queryParams['peopleNumber'])){
+            if(empty($queryParams['peopleNumber'])){
+                $error->error = 'BlankPeopleNumber';
+                $error->message = 'Event name are required';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
             $error->error = 'NotIntPeopleNumber';
             $error->message = 'People number must be integer';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        elseif((int)($queryParams['peopleNumber']) === 0){
+            $error->error = 'InvalidPeopleNumber';
+            $error->message = "People number can't be 0";
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
