@@ -65,7 +65,7 @@ class ApiController extends Controller
          description, user_id as userId, address, required_people_number as peopleNumber, 
          meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DESC LIMIT $offset, $limit";
         }
-        if(!isset($limit) || empty($limit)){
+        if(!isset($limit) || (empty($limit)&& $limit !=0 )){
             $error->error = 'BlankEventListLimit';
             $error->message = 'Event list limit name are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -79,7 +79,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        if(!isset($offset) || empty($offset)){
+        if(!isset($offset) || (empty($offset)&& $offset !=0 )){
             $error->error = 'BlankEventListOffset';
             $error->message = 'Event list offset name are required';
             header('Content-Type: application/json; charset=utf-8');
@@ -97,7 +97,7 @@ class ApiController extends Controller
         $data = Yii::$app->db->createCommand($query)->queryAll();
         $jsonData =['events' => $data];
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( $jsonData, JSON_NUMERIC_CHECK );
+        echo json_encode( $jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK );
         exit;
     }
 
@@ -119,12 +119,13 @@ class ApiController extends Controller
      * @return mixed
      */
     public function actionCreateEvent()
-    {   
+    {   session_start();
         $model = new Events();
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
         $userId = OAuthVK::getUserIdToken($queryParams['token']);
+       
         if(!$userId){
             $error = new Error;
             $error->error = 'InvalidToken';

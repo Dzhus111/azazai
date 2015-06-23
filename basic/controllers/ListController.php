@@ -44,6 +44,7 @@ class ListController extends Controller
      
      public function actionVkontakte(){
          session_start();
+         OAuthVK::getToken();
          $id = OAuthVK::getUserIdToken($_SESSION['token']);
          if(!$id){
             echo 'error';
