@@ -36,25 +36,19 @@ class ListController extends Controller
      public function actionVk(){
          session_start();
         if (!empty($_GET['error'])) {
-    // Пришёл ответ с ошибкой. Например, юзер отменил авторизацию.
-    die($_GET['error']);
-} elseif (empty($_GET['code'])) {
-    // Самый первый запрос
-    OAuthVK::goToAuth();
-} else {
-    /*
-     * На данном этапе можно проверить зарегистрирован ли у вас ВК-юзер с id = OAuthVK::$userId
-     * Если да, то можно просто авторизовать его и не запрашивать его данные.
-     */
-    //echo $_SESSION['token'].'<br/>';
-    $user = OAuthVK::getUser();
-    print_r($user);
-    /*
-     * Вот и всё - мы узнали основные данные авторизованного юзера.
-     * $user в этом примере состоит из трёх полей: uid, first_name, last_name.
-     * Делайте с ними что угодно - регистрируйте, авторизуйте, ругайте...
-     */
-}
+            die($_GET['error']);
+        } elseif (empty($_GET['code'])) {
+            OAuthVK::goToAuth();
+        } 
+     }
+     
+     public function actionVkontakte(){
+         session_start();
+         $id = OAuthVK::getUserIdToken($_SESSION['token']);
+         if(!$id){
+            echo 'error';
+         }
+         var_dump($id);
      }
      
     public function actionIndex()

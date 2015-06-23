@@ -27,7 +27,7 @@ class Tags extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['tag_id', 'tag_name', 'events_count'], 'required'],
+            [['tag_name', 'events_count'], 'required'],
             [['tag_id', 'events_count'], 'integer'],
             [['tag_name'], 'string', 'max' => 255],
             [['tag_name'], 'unique']
@@ -45,4 +45,5 @@ class Tags extends \yii\db\ActiveRecord
             'events_count' => 'Events Count',
         ];
     }
+    
 }

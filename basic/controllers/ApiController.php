@@ -2,9 +2,11 @@
 
 namespace app\controllers;
 use Yii;
+use yii\helpers\OAuthVK;
 use yii\helpers\Error;
 use yii\db\Query;
 use app\models\Events;
+use app\models\Tags;
 use app\models\EventsModel;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
@@ -114,8 +116,17 @@ class ApiController extends Controller
         $model = new Events();
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
-
         $this->validateEventsParams($queryParams);
+        $userId = OAuthVK::getUserIdToken($queryParams['token']);
+        if(!$userId){
+            $error = new Error;
+            $error->error = 'InvalidToken';
+            $error->message = 'Token must be valid';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        $data['user_id'] = $userId;
         $data['event_name'] = $queryParams['name'];
         $data['description'] = $queryParams['description'];
         $data['address'] = $queryParams['address'];
@@ -123,15 +134,26 @@ class ApiController extends Controller
         $data['required_people_number'] = $queryParams['peopleNumber'];
         $data['created_date'] = time();
         $data['status'] = true;
-        $data['user_id'] = time();
         $tags = explode(",",$queryParams['tags']);
         $searchText = $data['event_name']." ".$data['description'];
         foreach($tags as $tag){
             $searchText = $searchText." ".$tag;
         }
         $data['search_text'] = $searchText;
+        $modelData = ['Events'=>$data];
+        foreach($tags as $tag){
+            $searchTag = Tags::find()->where(['tag_name' => $tag])->one();
+            if($searchTag == null){
+                $tagsModel = new Tags();
+                $tagsModel->tag_name = $tag;
+                $tagsModel->events_count = 1;
+                $tagsModel->save(false);
+            }else{
+                $searchTag->events_count = $searchTag->events_count + 1;
+                $searchTag->update(false);
+            }
+        }
         
-        $modelData= ['Events' => $data];
         $model->load($modelData);
         if($model->save(false)){
             $jsonData =['id' => $model->event_id];
@@ -139,7 +161,7 @@ class ApiController extends Controller
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE);
             exit;
         }else{
-            $jsonData =['error' => false];
+            $jsonData =['error' => "Can't create event"];
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE);
             exit;
@@ -202,7 +224,7 @@ class ApiController extends Controller
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
-        }elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ]+$/u',$queryParams['name'])){
+        }elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ,]+$/u',$queryParams['name'])){
             $error->error = 'InvalidName';
             $error->message = 'Event name must contain just letters and numbers';
             header('Content-Type: application/json; charset=utf-8');
@@ -223,7 +245,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ]+$/u',$queryParams['description'])){
+        elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ,]+$/u',$queryParams['description'])){
             $error->error = 'InvalidDescription';
             $error->message = 'Event description must contain just letters and numbers';
             header('Content-Type: application/json; charset=utf-8');
@@ -251,7 +273,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-         elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ]+$/u',$queryParams['description'])){
+         elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ,]+$/u',$queryParams['address'])){
             $error->error = 'InvalidAddress';
             $error->message = 'Event address must contain just letters and numbers';
             header('Content-Type: application/json; charset=utf-8');
@@ -300,9 +322,16 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ]+$/u',$queryParams['description'])){
+        elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ,]+$/u',$queryParams['tags'])){
             $error->error = 'InvalidTags';
             $error->message = 'Event tags must contain just letters and numbers';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        if(!isset($queryParams['token'])){
+            $error->error = 'BlankToken';
+            $error->message = 'Token  are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
