@@ -3,6 +3,7 @@
 namespace app\controllers;
 use Yii;
 use yii\helpers\OAuthVK;
+use yii\helpers\SqlUtils;
 use yii\helpers\Error;
 use yii\db\Query;
 use app\models\Events;
@@ -27,7 +28,12 @@ class ApiController extends Controller
         ];
     }
 
-    
+    public function actionDb(){
+        
+      
+        SqlUtils::createEventsTable();
+        
+    }    
     public function actionGetEventsList()
     {   
         $error = new Error;
