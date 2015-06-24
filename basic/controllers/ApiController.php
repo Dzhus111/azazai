@@ -110,7 +110,7 @@ class ApiController extends Controller
                 
                 $query = "SELECT event_id as id, event_name as name,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
-                 meeting_date as date FROM events WHERE meeting_date = $filterDate AND 
+                 meeting_date as date FROM events WHERE meeting_date >= $filterDate AND 
                  meeting_date <= $endOfdateFilter AND status = 1  ORDER BY date ASC LIMIT $offset, $limit";
                 
             }else{
