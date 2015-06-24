@@ -41,36 +41,13 @@ class ApiController extends Controller
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $timeOut = null;
+        $query = null;
+        $seqrchQuery = $queryParams['query'];
         if(isset($queryParams['timeOut'])){
             $timeOut = $queryParams['timeOut'];
         }
         $time = time();
-        if(isset($queryParams['dateFilter'])){
-            if(empty($queryParams['dateFilter'])){
-                $error->error = 'BlankFilter';
-                $error->message = 'Filter fild is blank';
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( $error);
-                exit;
-            }
-            if(is_numeric($queryParams['dateFilter'])){
-                $time = $queryParams['dateFilter'];
-            }else{
-                $error->error = 'NotIntDateFilter';
-                $error->message = 'Date filter must be integer';
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( $error);
-                exit;
-            }
-        }
-        $query = "SELECT event_id as id, event_name as name,
-         description, user_id as userId, address, required_people_number as peopleNumber, 
-         meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
-        if($timeOut === 'true'){
-            $query = "SELECT event_id as id, event_name as name,
-         description, user_id as userId, address, required_people_number as peopleNumber, 
-         meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DESC LIMIT $offset, $limit";
-        }
+        
         if(!isset($limit) || (empty($limit)&& $limit !=0 )){
             $error->error = 'BlankEventListLimit';
             $error->message = 'Event list limit name are required';
@@ -99,6 +76,54 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
+        
+        $query = "SELECT event_id as id, event_name as name,
+                 description, user_id as userId, address, required_people_number as peopleNumber, 
+                 meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
+        if($timeOut === 'true'){
+            $query = "SELECT event_id as id, event_name as name,
+                 description, user_id as userId, address, required_people_number as peopleNumber, 
+                 meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DESC LIMIT $offset, $limit";
+        }
+        if($queryParams['query']){
+            if(!empty($queryParams['query'])&&$seqrchQuery != '0'){
+                $query = "SELECT event_id as id, event_name as name,
+         description, user_id as userId, address, required_people_number as peopleNumber, 
+         meeting_date as date FROM events WHERE MATCH(search_text) AGAINST ('$seqrchQuery') AND status = 1 AND meeting_date > $time ORDER BY date DESC LIMIT $offset, $limit";
+            }else{
+                 $query = "SELECT event_id as id, event_name as name,
+                 description, user_id as userId, address, required_people_number as peopleNumber, 
+                 meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
+            }
+        }
+        if(isset($queryParams['dateFilter'])){
+            if(empty($queryParams['dateFilter']) && $queryParams['dateFilter'] != '0'){
+                $error->error = 'BlankFilter';
+                $error->message = 'Filter fild is blank';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+            if(is_numeric($queryParams['dateFilter'])){
+                $filterDate = (int)$queryParams['dateFilter'];
+                $endOfdateFilter = $filterDate + (60*60*24);
+                
+                $query = "SELECT event_id as id, event_name as name,
+                 description, user_id as userId, address, required_people_number as peopleNumber, 
+                 meeting_date as date FROM events WHERE meeting_date = $filterDate AND 
+                 meeting_date <= $endOfdateFilter AND status = 1  ORDER BY date ASC LIMIT $offset, $limit";
+                
+            }else{
+                $error->error = 'NotIntDateFilter';
+                $error->message = 'Date filter must be integer';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+        
+        
+        
         
         $data = Yii::$app->db->createCommand($query)->queryAll();
         $jsonData =['events' => $data];
@@ -131,7 +156,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
         $userId = OAuthVK::getUserIdToken($queryParams['token']);
-       
+       /*
         if(!$userId){
             $error = new Error;
             $error->error = 'InvalidToken';
@@ -140,7 +165,9 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
+        */
         $data['user_id'] = $userId;
+        $data['subscribers_count'] = 1;
         $data['event_name'] = $queryParams['name'];
         $data['description'] = $queryParams['description'];
         $data['address'] = $queryParams['address'];

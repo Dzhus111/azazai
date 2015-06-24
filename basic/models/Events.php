@@ -10,6 +10,7 @@ use Yii;
  * @property integer $event_id
  * @property string $event_name
  * @property string $description
+ * @property integer subscribers_count
  * @property string $address
  * @property integer $status
  * @property integer $required_people_number
@@ -34,7 +35,7 @@ class Events extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['event_name', 'address', 'status','description', 'required_people_number', 'created_date', 'meeting_date', 'user_id'], 'required'],
+            [['event_name', 'address', 'status','description', 'subscribers_count', 'required_people_number', 'created_date', 'meeting_date', 'user_id'], 'required'],
             [['description', 'search_text'], 'string'],
             [['required_people_number', 'created_date', 'user_id'], 'integer'],
             [['event_name'], 'string', 'max' => 255]
@@ -47,6 +48,7 @@ class Events extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
+            'subscribers_count' => "Subscribers count",
             'event_id' => 'Event ID',
             'event_name' => 'Event Name',
             'description' => 'Description',
