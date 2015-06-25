@@ -70,7 +70,9 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        
+        header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+            exit;
     }
         
     public function actionGetEventsList()
