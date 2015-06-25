@@ -34,6 +34,13 @@ class ApiController extends Controller
         SqlUtils::createEventsTable();
         
     }
+    public function actionSubscribe(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams['id']);
+        $userId = $this->getUserIdByToken($queryParams['token']);
+        
+    }
+    
     public function actionCancelEvent(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
@@ -180,7 +187,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
         $userId = OAuthVK::getUserIdToken($queryParams['token']);
-       /*
+       
         if(!$userId){
             $error = new Error;
             $error->error = 'InvalidToken';
@@ -189,7 +196,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        */
+        
         $data['user_id'] = $userId;
         $data['subscribers_count'] = 1;
         $data['event_name'] = $queryParams['name'];
@@ -427,6 +434,25 @@ class ApiController extends Controller
         }
     }
     
+    public function getUserIdByToken($token){
+        if(!isset($token) || empty($token)){
+            $error->error = 'BlankToken';
+            $error->message = 'Token  are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        $userId = OAuthVK::getUserIdToken($token);
+        if(!$userId){
+            $error = new Error;
+            $error->error = 'InvalidToken';
+            $error->message = 'Token must be valid';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        return $userId;
+    }
 }
 
 
