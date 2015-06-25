@@ -8,6 +8,7 @@ use yii\helpers\Error;
 use yii\db\Query;
 use app\models\Events;
 use app\models\Tags;
+use app\models\Subscribers;
 use app\models\EventsModel;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
@@ -35,17 +36,28 @@ class ApiController extends Controller
         
     }
     public function actionSubscribe(){
+        session_start();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
+        $eventId = $queryParams['id'];
         $userId = $this->getUserIdByToken($queryParams['token']);
-        
+        $model = new Subscribers;
+        $model->event_id = $eventId;
+        $model->user_id = $userId;
+        $model->save();
+        $event = Events::find()->where(['event_id' => $eventId])->one();
+        $event->subscribers_count = $event->subscribers_count + 1;
+        $event ->update(false);
+        header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+            exit;
     }
     
     public function actionCancelEvent(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
         $id = $queryParams['id'];
-        $model = Events::find()->where(['event_id' => $id])->one();;
+        $model = Events::find()->where(['event_id' => $id])->one();
         $model->status = 0;
         if($model->update(false)){
             header('Content-Type: application/json; charset=utf-8');
@@ -435,6 +447,7 @@ class ApiController extends Controller
     }
     
     public function getUserIdByToken($token){
+        $error = new Error;
         if(!isset($token) || empty($token)){
             $error->error = 'BlankToken';
             $error->message = 'Token  are required';
