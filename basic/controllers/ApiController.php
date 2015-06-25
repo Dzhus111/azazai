@@ -33,7 +33,40 @@ class ApiController extends Controller
       
         SqlUtils::createEventsTable();
         
-    }    
+    }
+    public function actionCancelEvent(){
+        $error = new Error;
+        $queryParams = Yii::$app->request->queryParams;
+        if(!isset($queryParams['id']) || (empty($queryParams['id'])&& $queryParams['id'] !='0' )){
+            $error->error = 'BlankEventId';
+            $error->message = 'Event id are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }elseif(!is_numeric($queryParams['id'])){
+            $error->error = 'NotIntEventId';
+            $error->message = 'Event id must be intereg';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        $id = $queryParams['id'];
+        $model = Events::find()->where(['event_id' => $id])->one();;
+        $model->status = 0;
+        if($model->update(false)){
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['succsess' => 'true']);
+            exit;
+        }else{
+            $error->error = 'NotFindId';
+            $error->message = 'Event id is not finded';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        
+    }
+        
     public function actionGetEventsList()
     {   
         $error = new Error;

@@ -37,7 +37,7 @@ class Events extends \yii\db\ActiveRecord
         return [
             [['event_name', 'address', 'status','description', 'subscribers_count', 'required_people_number', 'created_date', 'meeting_date', 'user_id'], 'required'],
             [['description', 'search_text'], 'string'],
-            [['required_people_number', 'created_date', 'user_id'], 'integer'],
+            [['required_people_number', 'created_date', 'user_id', 'status'], 'integer'],
             [['event_name'], 'string', 'max' => 255]
         ];
     }
@@ -60,14 +60,5 @@ class Events extends \yii\db\ActiveRecord
             'search_text' => 'Search Text',
             'user_id' => 'User ID',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     * @return EventsQuery the active query used by this AR class.
-     */
-    public static function find()
-    {
-        return new EventsQuery(get_called_class());
     }
 }

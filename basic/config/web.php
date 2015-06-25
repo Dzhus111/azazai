@@ -18,6 +18,7 @@ $config = [
             'rules' => [
                 '/' => 'site/index',
                 'api/getEventsList' => 'api/get-events-list',
+                'api/cancelEvent' => 'api/cancel-event',
                 'api/createEvent' => 'api/create-event',
                 '<controller:\w+>/<id:\d+>' => '<controller>/view',
                 '<controller:\w+>/<action:\w+>/<id:\d+>' => '<controller>/<action>',
