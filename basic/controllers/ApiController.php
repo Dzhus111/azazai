@@ -87,9 +87,13 @@ class ApiController extends Controller
         }
         if($queryParams['query']){
             if(!empty($queryParams['query'])&&$seqrchQuery != '0'){
+                $comma = strpos($seqrchQuery, ',');
+                if($comma){
+                    $seqrchQuery = str_replace(',', ' ', $seqrchQuery);
+                }
                 $query = "SELECT event_id as id, event_name as name,
-         description, user_id as userId, address, required_people_number as peopleNumber, 
-         meeting_date as date FROM events WHERE MATCH(search_text) AGAINST ('$seqrchQuery') AND status = 1 AND meeting_date > $time ORDER BY date DESC LIMIT $offset, $limit";
+                 description, user_id as userId, address, required_people_number as peopleNumber, 
+                 meeting_date as date FROM events WHERE MATCH(search_text) AGAINST ('$seqrchQuery') AND status = 1 AND meeting_date > $time ORDER BY date DESC LIMIT $offset, $limit";
             }else{
                  $query = "SELECT event_id as id, event_name as name,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
