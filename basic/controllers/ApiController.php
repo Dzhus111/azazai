@@ -56,11 +56,10 @@ class ApiController extends Controller
     }
     
     public function actionGetUserEvents(){
-        session_start();
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
         $this->validateMod($queryParams);
-        $userId = $this->getUserIdByToken($_SESSION['token']);
+        $userId = $this->getUserIdByToken($queryParams['token']);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $mod = $queryParams['mod'];
@@ -70,7 +69,7 @@ class ApiController extends Controller
                  'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
                  'meeting_date as date'])
                 ->from('events')
-                ->where(['user_id' => 0])
+                ->where(['user_id' => $userId])
                 ->limit($limit)
                 ->offset($offset)
                 ->all();
@@ -83,12 +82,12 @@ class ApiController extends Controller
                  'events.description', 'events.user_id as userId', 'events.address', 'events.required_people_number as peopleNumber', 
                  'events.meeting_date as date'])
                 ->from('events')
-                ->rightJoin('subscribers', "subscribers.event_id = events.event_id and subscribers.user_id = $userId", [])
+                ->rightJoin('Events', "subscribers.event_id = events.event_id and subscribers.user_id = $userId", [])
                 ->limit($limit)
                 ->offset($offset)
                 ->all();
                 header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+                echo json_encode( ['Events'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
                 exit;
         }
          
