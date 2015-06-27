@@ -87,7 +87,7 @@ class ApiController extends Controller
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $data = (new \yii\db\Query())
-                ->select(['user_id'])
+                ->select(['user_id as userId'])
                 ->from('subscribers')
                 ->where(['event_id' => $eventId])
                 ->limit($limit)
