@@ -51,7 +51,7 @@ class ApiController extends Controller
                 ->offset($offset)
                 ->all();
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        echo json_encode( ['Comments'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
         exit; 
     }
     
@@ -131,7 +131,7 @@ class ApiController extends Controller
                 ->offset($offset)
                 ->all();
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        echo json_encode( ['Subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
         exit;    
         
         
