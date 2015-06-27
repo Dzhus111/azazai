@@ -7,6 +7,7 @@ use yii\helpers\SqlUtils;
 use yii\helpers\Error;
 use yii\db\Query;
 use app\models\Events;
+use app\models\Comments;
 use app\models\Tags;
 use app\models\Subscribers;
 use app\models\EventsModel;
@@ -35,6 +36,30 @@ class ApiController extends Controller
         SqlUtils::createEventsTable();
         
     }
+    
+    public function actionAddComment(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams['id']);
+        $this->validateComment($queryParams);
+        $userId = $this->getUserIdByToken($queryParams['token']);
+        $eventId = $queryParams['id'];
+        $text = htmlentities($queryParams['text']);
+        $model = new Comments();
+        $model->event_id = $eventId;
+        $model->user_id = $userId;
+        $model->comment_text = $text;
+        if($model->save(false)){
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+            exit;
+        }else{
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>false]);
+            exit;
+        }
+}
+    
+    
     public function actionGetSubscribers(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
@@ -69,8 +94,8 @@ class ApiController extends Controller
         $event->subscribers_count = $event->subscribers_count + 1;
         $event ->update(false);
         header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['success'=>true]);
-            exit;
+        echo json_encode( ['success'=>true]);
+        exit;
     }
     
     public function actionCancelEvent(){
@@ -489,6 +514,24 @@ class ApiController extends Controller
         elseif(!is_numeric($offset)){
             $error->error = 'NotIntEventListOffset';
             $error->message = 'Event list offset must be integer';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+    }
+    
+    public function validateComment($queryParams){
+        $error = new Error;
+        if(!isset($queryParams['text']) || (empty($queryParams['text'])&& $queryParams['text'] !='0')){
+            $error->error = 'BlankComment';
+            $error->message = 'Comment are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        elseif(strlen($queryParams['text'])<1 || strlen($queryParams['text'])>200 ){
+            $error->error = 'OutOfRangeError';
+            $error->message = 'Comment must contain min 1 characters and max 200 characters';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
