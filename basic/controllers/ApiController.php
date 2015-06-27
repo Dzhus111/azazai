@@ -35,8 +35,28 @@ class ApiController extends Controller
         SqlUtils::createEventsTable();
         
     }
+    public function actionGetSubscribers(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams['id']);
+        $this->limitAnfOffsetValidator($queryParams);
+        $eventId = $queryParams['id'];
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $data = (new \yii\db\Query())
+                ->select(['user_id'])
+                ->from('subscribers')
+                ->where(['event_id' => $eventId])
+                ->limit($limit)
+                ->offset($offset)
+                ->all();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( ['subscribers'=>$data]);
+        exit;    
+        
+        
+    }
+    
     public function actionSubscribe(){
-        session_start();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
         $eventId = $queryParams['id'];
@@ -467,6 +487,40 @@ class ApiController extends Controller
             exit;
         }
         return $userId;
+    }
+    
+    public function limitAnfOffsetValidator($queryParams){
+        $error = new Error;
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        if(!isset($limit) || (empty($limit)&& $limit !='0' )){
+            $error->error = 'BlankEventListLimit';
+            $error->message = 'Event list limit name are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        elseif(!is_numeric($limit)){
+            $error->error = 'NotIntEventListLimit';
+            $error->message = 'Event list limit must be integer';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        if(!isset($offset) || (empty($offset)&& $offset !=0 )){
+            $error->error = 'BlankEventListOffset';
+            $error->message = 'Event list offset name are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        elseif(!is_numeric($offset)){
+            $error->error = 'NotIntEventListOffset';
+            $error->message = 'Event list offset must be integer';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
     }
 }
 

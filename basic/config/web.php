@@ -17,6 +17,7 @@ $config = [
             'enableStrictParsing' => true,
             'rules' => [
                 '/' => 'site/index',
+                'api/getSubscribers' => 'api/get-subscribers',
                 'api/getEventsList' => 'api/get-events-list',
                 'api/cancelEvent' => 'api/cancel-event',
                 'api/createEvent' => 'api/create-event',
