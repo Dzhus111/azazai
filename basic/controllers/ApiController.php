@@ -118,11 +118,11 @@ class ApiController extends Controller
             exit;
         }
         
-        $query = "SELECT event_id as id, event_name as name,
+        $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
         if($timeOut === 'true'){
-            $query = "SELECT event_id as id, event_name as name,
+            $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DESC LIMIT $offset, $limit";
         }
@@ -132,11 +132,11 @@ class ApiController extends Controller
                 if($comma){
                     $seqrchQuery = str_replace(',', ' ', $seqrchQuery);
                 }
-                $query = "SELECT event_id as id, event_name as name,
+                $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE MATCH(search_text) AGAINST ('$seqrchQuery') AND status = 1 AND meeting_date > $time ORDER BY date DESC LIMIT $offset, $limit";
             }else{
-                 $query = "SELECT event_id as id, event_name as name,
+                 $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
             }
@@ -153,7 +153,7 @@ class ApiController extends Controller
                 $filterDate = (int)$queryParams['dateFilter'];
                 $endOfdateFilter = $filterDate + (60*60*24);
                 
-                $query = "SELECT event_id as id, event_name as name,
+                $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE meeting_date >= $filterDate AND 
                  meeting_date <= $endOfdateFilter AND status = 1  ORDER BY date ASC LIMIT $offset, $limit";
