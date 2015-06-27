@@ -44,14 +44,14 @@ class ApiController extends Controller
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $data = (new \yii\db\Query())
-                ->select(['user_id, comment_text'])
+                ->select(['user_id as userId', 'comment_text as text', 'date'])
                 ->from('comments')
                 ->where(['event_id' => $eventId])
                 ->limit($limit)
                 ->offset($offset)
                 ->all();
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( ['subscribers'=>$data]);
+        echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
         exit; 
     }
     
@@ -94,7 +94,7 @@ class ApiController extends Controller
                 ->offset($offset)
                 ->all();
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( ['subscribers'=>$data]);
+        echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
         exit;    
         
         

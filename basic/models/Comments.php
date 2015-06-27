@@ -10,6 +10,7 @@ use Yii;
  * @property integer $comment_id
  * @property integer $user_id
  * @property integer $event_id
+ * @property integer $date
  * @property string $comment_text
  */
 class Comments extends \yii\db\ActiveRecord
@@ -28,8 +29,8 @@ class Comments extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['user_id', 'event_id', 'comment_text'], 'required'],
-            [['user_id', 'event_id'], 'integer'],
+            [['user_id', 'event_id', 'comment_text', 'date'], 'required'],
+            [['user_id', 'event_id', 'date'], 'integer'],
             [['comment_text'], 'string']
         ];
     }
@@ -44,6 +45,7 @@ class Comments extends \yii\db\ActiveRecord
             'user_id' => 'User ID',
             'event_id' => 'Event ID',
             'comment_text' => 'Comment Text',
+            'date' => 'Comment Date'
         ];
     }
 }
