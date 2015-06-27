@@ -55,6 +55,44 @@ class ApiController extends Controller
         exit; 
     }
     
+    public function actionGetUserEvents(){
+        session_start();
+        $queryParams = Yii::$app->request->queryParams;
+        $this->limitAnfOffsetValidator($queryParams);
+        $this->validateMod($queryParams);
+        $userId = $this->getUserIdByToken($_SESSION['token']);
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $mod = $queryParams['mod'];
+        if($mod == 'created'){
+            $data = (new \yii\db\Query())
+                ->select(['event_id as id', 'event_name as name', 'subscribers_count as subscribersCount',
+                 'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
+                 'meeting_date as date'])
+                ->from('events')
+                ->where(['user_id' => 0])
+                ->limit($limit)
+                ->offset($offset)
+                ->all();
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+                exit; 
+        }elseif($mod == 'subscribed'){
+            $data = (new \yii\db\Query())
+                ->select(['events.event_id as id', 'events.event_name as name', 'events.subscribers_count as subscribersCount',
+                 'events.description', 'events.user_id as userId', 'events.address', 'events.required_people_number as peopleNumber', 
+                 'events.meeting_date as date'])
+                ->from('events')
+                ->rightJoin('subscribers', "subscribers.event_id = events.event_id and subscribers.user_id = $userId", [])
+                ->limit($limit)
+                ->offset($offset)
+                ->all();
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+                exit;
+        }
+         
+    }
     public function actionAddComment(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
@@ -510,29 +548,29 @@ class ApiController extends Controller
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         if(!isset($limit) || (empty($limit)&& $limit !='0' )){
-            $error->error = 'BlankEventListLimit';
-            $error->message = 'Event list limit name are required';
+            $error->error = 'BlankLimit';
+            $error->message = 'Limit are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
         }
         elseif(!is_numeric($limit)){
-            $error->error = 'NotIntEventListLimit';
-            $error->message = 'Event list limit must be integer';
+            $error->error = 'NotIntLimit';
+            $error->message = 'Limit must be integer';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
         }
         if(!isset($offset) || (empty($offset)&& $offset !=0 )){
-            $error->error = 'BlankEventListOffset';
-            $error->message = 'Event list offset name are required';
+            $error->error = 'BlankOffset';
+            $error->message = 'Offset are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
         }
         elseif(!is_numeric($offset)){
-            $error->error = 'NotIntEventListOffset';
-            $error->message = 'Event list offset must be integer';
+            $error->error = 'NotIntOffset';
+            $error->message = 'Offset must be integer';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
@@ -551,6 +589,29 @@ class ApiController extends Controller
         elseif(strlen($queryParams['text'])<1 || strlen($queryParams['text'])>200 ){
             $error->error = 'OutOfRangeError';
             $error->message = 'Comment must contain min 1 characters and max 200 characters';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+    }
+    
+    public function validateMod($queryParams){
+        $error = new Error;
+        if(!isset($queryParams['mod']) || (empty($queryParams['mod'])&& $queryParams['mod'] !='0')){
+            $error->error = 'BlankMod';
+            $error->message = 'Mod are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }else{
+            if($queryParams['mod'] == 'created'){
+                return;
+            }
+            if($queryParams['mod'] == 'subscribed'){
+                return;
+            }
+            $error->error = 'InvalidMod';
+            $error->message = 'Mod must be `created` or `subscribed`';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
