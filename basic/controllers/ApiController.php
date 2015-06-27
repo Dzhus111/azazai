@@ -99,6 +99,7 @@ class ApiController extends Controller
     {   
         $error = new Error;
         $queryParams = Yii::$app->request->queryParams;
+        $this->limitAnfOffsetValidator($queryParams);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $timeOut = null;
@@ -108,35 +109,6 @@ class ApiController extends Controller
             $timeOut = $queryParams['timeOut'];
         }
         $time = time();
-        
-        if(!isset($limit) || (empty($limit)&& $limit !=0 )){
-            $error->error = 'BlankEventListLimit';
-            $error->message = 'Event list limit name are required';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
-        }
-        elseif(!is_numeric($limit)){
-            $error->error = 'NotIntEventListLimit';
-            $error->message = 'Event list limit must be integer';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
-        }
-        if(!isset($offset) || (empty($offset)&& $offset !=0 )){
-            $error->error = 'BlankEventListOffset';
-            $error->message = 'Event list offset name are required';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
-        }
-        elseif(!is_numeric($offset)){
-            $error->error = 'NotIntEventListOffset';
-            $error->message = 'Event list offset must be integer';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
-        }
         
         $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
