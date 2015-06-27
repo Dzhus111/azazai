@@ -36,6 +36,24 @@ class ApiController extends Controller
         SqlUtils::createEventsTable();
         
     }
+    public function actionGetCommentsList(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams['id']);
+        $this->limitAnfOffsetValidator($queryParams);
+        $eventId = $queryParams['id'];
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $data = (new \yii\db\Query())
+                ->select(['user_id, comment_text'])
+                ->from('comments')
+                ->where(['event_id' => $eventId])
+                ->limit($limit)
+                ->offset($offset)
+                ->all();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( ['subscribers'=>$data]);
+        exit; 
+    }
     
     public function actionAddComment(){
         $queryParams = Yii::$app->request->queryParams;
@@ -48,6 +66,7 @@ class ApiController extends Controller
         $model->event_id = $eventId;
         $model->user_id = $userId;
         $model->comment_text = $text;
+        $model->date = time();
         if($model->save(false)){
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['success'=>true]);

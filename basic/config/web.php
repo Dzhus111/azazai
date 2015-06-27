@@ -18,6 +18,7 @@ $config = [
             'rules' => [
                 '/' => 'site/index',
                 'api/addComment' => 'api/add-comment',
+                'api/getCommentsList' => 'api/get-comments-list',
                 'api/getSubscribers' => 'api/get-subscribers',
                 'api/getEventsList' => 'api/get-events-list',
                 'api/cancelEvent' => 'api/cancel-event',
