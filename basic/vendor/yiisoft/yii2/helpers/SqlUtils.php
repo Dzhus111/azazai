@@ -26,4 +26,12 @@ class SqlUtils{
             
         
     }
+    
+    public static function updateTagsTable(){
+        $db= Yii::$app->db;
+        $sql_1 = "ALTER TABLE tags ADD events_count INT;";
+        $sql_2 = "ALTER TABLE tags ENGINE=InnoDB;";
+        $command_1 = $db->createCommand($sql_1)->execute();
+        $command_2 = $db->createCommand($sql_2)->execute();
+    }
 }

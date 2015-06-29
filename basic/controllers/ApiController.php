@@ -31,8 +31,16 @@ class ApiController extends Controller
     }
 
     public function actionDb(){
-        
-      
+        $queryParams = Yii::$app->request->queryParams;
+        if(isset($queryParams['table']) && $queryParams['table'] ==='tags'){
+            SqlUtils::updateTagsTable();
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+            exit;
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( ['success'=>false]);
+        exit;
         SqlUtils::createEventsTable();
         
     }
