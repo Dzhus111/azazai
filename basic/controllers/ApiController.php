@@ -36,6 +36,25 @@ class ApiController extends Controller
         SqlUtils::createEventsTable();
         
     }
+    
+    public function actionGetTags(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->limitAnfOffsetValidator($queryParams);
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $data = (new \yii\db\Query())
+                ->select(['tag_name as tagName', 'events_count as eventsCount'])
+                ->from('tags')
+                ->limit($limit)
+                ->offset($offset)
+                ->orderBy(['events_count'=>SORT_DESC])
+                ->all();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( ['Tags'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        exit;
+                
+    } 
+    
     public function actionGetCommentsList(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
