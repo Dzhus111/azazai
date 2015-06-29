@@ -37,6 +37,48 @@ class ApiController extends Controller
         
     }
     
+    public function actionGetEventsByTag(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->limitAnfOffsetValidator($queryParams);
+        $this->validateTagParam($queryParams);
+        $tag = $queryParams['tag'];
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $time = time();
+        $timeOut = null;
+        $compareSymbol = '>';
+        $sortMod = SORT_DESC;
+        $mod = $queryParams['mod'];
+        if(isset($queryParams['timeOut'])){
+            $timeOut = $queryParams['timeOut'];
+            
+            if($timeOut === 'true'){
+                $compareSymbol = '<';
+                $sortMod = SORT_ASC;
+            }else{
+                $error = new Error;
+                $error->error = 'InvalidTimeOutValue';
+                $error->message = 'TimeOut value must be `true`';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+        $data = (new \yii\db\Query())
+                ->select(['event_id as id', 'event_name as name', 'subscribers_count as subscribersCount',
+                 'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
+                 'meeting_date as date'])
+                ->from('events')
+                ->where("MATCH(search_text) AGAINST ('$tag') AND status = 1")
+                ->andWhere([$compareSymbol, 'meeting_date', $time])
+                ->limit($limit)
+                ->offset($offset)
+                ->orderBy(['date'=> $sortMod])
+                ->all();
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+                exit; 
+    }
     public function actionGetTags(){
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
@@ -655,6 +697,17 @@ class ApiController extends Controller
             }
             $error->error = 'InvalidMod';
             $error->message = 'Mod must be `created` or `subscribed`';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+    }
+    
+    public function validateTagParam($queryParams){
+        $error = new Error;
+        if(!isset($queryParams['tag']) || (empty($queryParams['tag'])&& $queryParams['tag'] !='0')){
+            $error->error = 'BlankTag';
+            $error->message = 'Tag are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
