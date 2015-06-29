@@ -49,6 +49,7 @@ class ApiController extends Controller
                 ->where(['event_id' => $eventId])
                 ->limit($limit)
                 ->offset($offset)
+                ->orderBy(['date'=>SORT_DESC])
                 ->all();
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['Comments'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
@@ -62,7 +63,27 @@ class ApiController extends Controller
         $userId = $this->getUserIdByToken($queryParams['token']);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
+        $time = time();
+        $timeOut = null;
+        $compareSymbol = '>';
+        $sortMod = SORT_DESC;
         $mod = $queryParams['mod'];
+        if(isset($queryParams['timeOut'])){
+            $timeOut = $queryParams['timeOut'];
+            
+            if($timeOut === 'true'){
+                $compareSymbol = '<';
+                $sortMod = SORT_ASC;
+            }else{
+                $error = new Error;
+                $error->error = 'InvalidTimeOutValue';
+                $error->message = 'TimeOut value must be `true`';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+        
         if($mod == 'created'){
             $data = (new \yii\db\Query())
                 ->select(['event_id as id', 'event_name as name', 'subscribers_count as subscribersCount',
@@ -70,8 +91,10 @@ class ApiController extends Controller
                  'meeting_date as date'])
                 ->from('events')
                 ->where(['user_id' => $userId])
+                ->andWhere([$compareSymbol, 'meeting_date', $time])
                 ->limit($limit)
                 ->offset($offset)
+                ->orderBy(['date'=> $sortMod])
                 ->all();
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
@@ -82,9 +105,11 @@ class ApiController extends Controller
                  'events.description', 'events.user_id as userId', 'events.address', 'events.required_people_number as peopleNumber', 
                  'events.meeting_date as date'])
                 ->from('events')
-                ->rightJoin('Events', "subscribers.event_id = events.event_id and subscribers.user_id = $userId", [])
+                ->innerJoin('subscribers', "subscribers.event_id = events.event_id AND  subscribers.user_id = $userId
+                AND events.meeting_date $compareSymbol $time", [])
                 ->limit($limit)
                 ->offset($offset)
+                ->orderBy(['events.meeting_date'=> $sortMod])
                 ->all();
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode( ['Events'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
