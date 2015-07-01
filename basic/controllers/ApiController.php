@@ -38,10 +38,15 @@ class ApiController extends Controller
             echo json_encode( ['success'=>true]);
             exit;
         }
+        if(isset($queryParams['table']) && $queryParams['table'] ==='events'){
+            SqlUtils::createEventsTable();
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+            exit;
+        }
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( ['success'=>false]);
-        exit;
-        SqlUtils::createEventsTable();
+            echo json_encode( ['success'=>false]);
+            exit;
         
     }
     
@@ -84,7 +89,7 @@ class ApiController extends Controller
                 ->orderBy(['date'=> $sortMod])
                 ->all();
                 header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+                echo json_encode( ['Events'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
                 exit; 
     }
     public function actionGetTags(){
@@ -167,7 +172,7 @@ class ApiController extends Controller
                 ->orderBy(['date'=> $sortMod])
                 ->all();
                 header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( ['subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+                echo json_encode( ['Events'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
                 exit; 
         }elseif($mod == 'subscribed'){
             $data = (new \yii\db\Query())
