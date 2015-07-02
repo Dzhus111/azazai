@@ -490,7 +490,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        elseif(strlen($queryParams['name'])<5 || strlen($queryParams['name'])>50 ){
+        elseif(mb_strlen($queryParams['name'], 'UTF-8')<5 || mb_strlen($queryParams['name'], 'UTF-8')>50 ){
             $error->error = 'OutOfRangeError';
             $error->message = 'Event name must contain min 5 characters and max 50 characters';
             header('Content-Type: application/json; charset=utf-8');
@@ -511,7 +511,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        elseif(strlen($queryParams['description'])<5 || strlen($queryParams['description'])>500 ){
+        elseif(mb_strlen($queryParams['description'], 'UTF-8')<5 || mb_strlen($queryParams['description'], 'UTF-8')>500 ){
             $error->error = 'OutOfRangeError';
             $error->message = 'Event description must contain min 5 characters and max 500 characters';
             header('Content-Type: application/json; charset=utf-8');
@@ -525,7 +525,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        elseif(strlen($queryParams['address'])<5 || strlen($queryParams['address'])>200 ){
+        elseif(mb_strlen($queryParams['address'], 'UTF-8')<5 || mb_strlen($queryParams['address'], 'UTF-8')>200 ){
             $error->error = 'OutOfRangeError';
             $error->message = 'Event address must contain min 5 characters and max 200 characters';
             header('Content-Type: application/json; charset=utf-8');
