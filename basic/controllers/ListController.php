@@ -10,6 +10,7 @@ use app\models\EventsModel;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\data\ActiveDataProvider;
 
 /**
  * ListController implements the CRUD actions for Events model.
@@ -33,6 +34,16 @@ class ListController extends Controller
      * @return mixed
      */
      
+     public function actionEvents(){
+        $dataProvider = new ActiveDataProvider([
+        'query' => Events::find(),
+        'pagination' => [
+        'pageSize' => 20,
+                        ],
+                    ]);
+        $events = $dataProvider->getModels();
+        return $this->render('list', ['dataProvider' => $dataProvider]);
+     }
      public function actionVk(){
          session_start();
         if (!empty($_GET['error'])) {

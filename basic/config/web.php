@@ -7,8 +7,8 @@ $config = [
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
     'components' => [
+        
         'request' => [
-            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'pImaLs8tXTbljqdD9KPPpmWHW-MFEOqp',
         ],
         'urlManager' => [
@@ -16,7 +16,7 @@ $config = [
             'showScriptName' => false,
             'enableStrictParsing' => true,
             'rules' => [
-                '/' => 'site/index',
+                '/' => 'list/events',
                 'api/addComment' => 'api/add-comment',
                 'api/getEventsByTag' => 'api/get-events-by-tag',
                 'api/getTags' => 'api/get-tags',
