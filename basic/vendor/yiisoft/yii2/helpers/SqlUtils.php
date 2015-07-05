@@ -34,4 +34,57 @@ class SqlUtils{
         $command_1 = $db->createCommand($sql_1)->execute();
         $command_2 = $db->createCommand($sql_2)->execute();
     }
+    
+    public static function createCommentsTable(){
+        $db= Yii::$app->db;
+        $sql_1 = "DROP TABLE IF EXISTS `comments`";
+        $sql_2 ="CREATE TABLE IF NOT EXISTS comments(
+                comment_id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                event_id int,
+                date int,
+                comment_text text,
+                user_id int,
+                INDEX comments_event_id(event_id)
+                )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
+         $command_1 = $db->createCommand($sql_1)->execute();
+         $command_2 = $db->createCommand($sql_2)->execute();  
+            
+        
+    }
+    public static function createSubscribersTable(){
+        $db= Yii::$app->db;
+        $sql_1 = "DROP TABLE IF EXISTS `subscribers`";
+        $sql_2 ="CREATE TABLE IF NOT EXISTS subscribers(
+                event_id int,
+                user_id int,
+                INDEX subscribers_event_id (event_id),
+                INDEX event_id_user_id(user_id)
+                )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
+         $command_1 = $db->createCommand($sql_1)->execute();
+         $command_2 = $db->createCommand($sql_2)->execute();  
+            
+        
+    }
+    public static function createTagsTable(){
+        $db= Yii::$app->db;
+        $sql_1 = "DROP TABLE IF EXISTS `tags`";
+        $sql_2 ="CREATE TABLE IF NOT EXISTS tags(
+                tag_id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                tag_name varchar(255),
+                events_count int,
+                INDEX tag_name (tag_name)
+                )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
+         $command_1 = $db->createCommand($sql_1)->execute();
+         $command_2 = $db->createCommand($sql_2)->execute();  
+            
+        
+    }
+    
+    public static function regenerateDb(){
+        self::createEventsTable();
+        self::createCommentsTable();
+        self::createSubscribersTable();
+        self::createTagsTable();
+        return true;
+    }
 }

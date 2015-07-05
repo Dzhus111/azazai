@@ -31,23 +31,15 @@ class ApiController extends Controller
     }
 
     public function actionDb(){
-        $queryParams = Yii::$app->request->queryParams;
-        if(isset($queryParams['table']) && $queryParams['table'] ==='tags'){
-            SqlUtils::updateTagsTable();
+        if(SqlUtils::regenerateDb()){
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['success'=>true]);
             exit;
-        }
-        if(isset($queryParams['table']) && $queryParams['table'] ==='events'){
-            SqlUtils::createEventsTable();
+        }else{
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['success'=>true]);
-            exit;
-        }
-        header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['success'=>false]);
             exit;
-        
+        }
     }
     
     public function actionGetEventsByTag(){
@@ -242,6 +234,18 @@ class ApiController extends Controller
         $this->validateEventId($queryParams['id']);
         $eventId = $queryParams['id'];
         $userId = $this->getUserIdByToken($queryParams['token']);
+        $subscriber = Subscribers::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
+        if($subscriber){
+            Yii::$app->db->createCommand
+            ("DELETE FROM subscribers WHERE user_id = $userId AND event_id = $eventId")->execute();
+            $event = Events::find()->where(['event_id' => $eventId])->one();
+            $event->subscribers_count = $event->subscribers_count - 1;
+            $event ->update(false);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+            exit;
+        }
+        
         $model = new Subscribers;
         $model->event_id = $eventId;
         $model->user_id = $userId;
@@ -373,7 +377,7 @@ class ApiController extends Controller
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
-        $userId = OAuthVK::getUserIdToken($queryParams['token']);
+        $userId = OAuthVK::getUserIdToken($_SESSION['token']);
        
         if(!$userId){
             $error = new Error;
@@ -415,6 +419,10 @@ class ApiController extends Controller
         
         $model->load($modelData);
         if($model->save(false)){
+            $subscribersModel = new Subscribers;
+            $subscribersModel->event_id = $model->event_id;
+            $subscribersModel->user_id = $model->user_id;
+            $subscribersModel->save(false);
             $jsonData =['id' => $model->event_id];
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE);
