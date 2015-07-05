@@ -143,7 +143,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
         $this->validateMod($queryParams);
-        $userId = 131705958;//$this->getUserIdByToken($queryParams['token']);
+        $userId = $this->getUserIdByToken($queryParams['token']);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $time = time();
