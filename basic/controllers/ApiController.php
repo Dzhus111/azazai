@@ -222,8 +222,12 @@ class ApiController extends Controller
                 ->limit($limit)
                 ->offset($offset)
                 ->all();
+        $usersIds = array();
+        foreach ($data as $value){
+            $usersIds[] = $value['userId'];
+        }
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( ['Subscribers'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        echo json_encode( ['Subscribers'=>$usersIds], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
         exit;    
         
         
@@ -372,12 +376,12 @@ class ApiController extends Controller
      * @return mixed
      */
     public function actionCreateEvent()
-    {   session_start();
+    {   
         $model = new Events();
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
-        $userId = OAuthVK::getUserIdToken($_SESSION['token']);
+        $userId = OAuthVK::getUserIdToken($queryParams['token']);
        
         if(!$userId){
             $error = new Error;
