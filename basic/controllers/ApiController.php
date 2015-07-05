@@ -42,6 +42,23 @@ class ApiController extends Controller
         }
     }
     
+    public function actionIsSubscribed(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams['id']);
+        $eventId = $queryParams['id'];
+        $userId = $this->getUserIdByToken($queryParams['token']);
+        $subscriber = Subscribers::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
+        if($subscriber){
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['isSubscribed'=>true], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+            exit;
+        }else{
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['isSubscribed'=>false], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+            exit;
+        }
+    }
+    
     public function actionGetEventsByTag(){
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
