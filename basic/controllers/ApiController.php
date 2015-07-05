@@ -143,7 +143,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
         $this->validateMod($queryParams);
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $userId = 131705958;//$this->getUserIdByToken($queryParams['token']);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $time = time();
@@ -190,7 +190,7 @@ class ApiController extends Controller
                  'events.meeting_date as date'])
                 ->from('events')
                 ->innerJoin('subscribers', "subscribers.event_id = events.event_id AND  subscribers.user_id = $userId
-                AND events.meeting_date $compareSymbol $time and events.status = 1", [])
+                AND events.meeting_date $compareSymbol $time and events.status = 1 and events.status = 1 and events.user_id != $userId", [])
                 ->limit($limit)
                 ->offset($offset)
                 ->orderBy(['events.meeting_date'=> $sortMod])
