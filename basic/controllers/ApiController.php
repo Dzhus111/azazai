@@ -214,8 +214,9 @@ class ApiController extends Controller
         $model->comment_text = $text;
         $model->date = time();
         if($model->save(false)){
+            $jsonData = ['commentId' => $model->comment_id, 'date' => $model->date];
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['success'=>true]);
+            echo json_encode($jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
             exit;
         }else{
             header('Content-Type: application/json; charset=utf-8');
