@@ -3,6 +3,7 @@
 namespace app\controllers;
 
 use Yii;
+use yii\helpers\Url;
 use yii\helpers\OAuthVK;
 use yii\helpers\Utils;
 use app\models\Events;

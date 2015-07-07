@@ -255,6 +255,9 @@ class ApiController extends Controller
         $this->validateEventId($queryParams['id']);
         $eventId = $queryParams['id'];
         $userId = $this->getUserIdByToken($queryParams['token']);
+        $eventModel = Events::find()->where(['event_id' => $eventId])->one();
+        $tagsString = str_replace($eventModel->event_name.' '.$eventModel->description.' ', '', $eventModel->search_text);
+        $tags = explode(' ', $tagsString);
         $subscriber = Subscribers::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
         if($subscriber){
             Yii::$app->db->createCommand
@@ -262,18 +265,28 @@ class ApiController extends Controller
             $event = Events::find()->where(['event_id' => $eventId])->one();
             $event->subscribers_count = $event->subscribers_count - 1;
             $event ->update(false);
+            foreach($tags as $tag){
+                $searchTag = Tags::find()->where(['tag_name' => $tag])->one();
+                $searchTag->events_count = $searchTag->events_count - 1;
+                $searchTag->update(false);
+            }
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['success'=>true]);
             exit;
         }
         
+        
         $model = new Subscribers;
         $model->event_id = $eventId;
         $model->user_id = $userId;
         $model->save();
-        $event = Events::find()->where(['event_id' => $eventId])->one();
-        $event->subscribers_count = $event->subscribers_count + 1;
-        $event ->update(false);
+        foreach($tags as $tag){
+                $searchTag = Tags::find()->where(['tag_name' => $tag])->one();
+                $searchTag->events_count = $searchTag->events_count + 1;
+                $searchTag->update(false);
+            }
+        $eventModel->subscribers_count = $eventModel->subscribers_count + 1;
+        $eventModel ->update(false);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['success'=>true]);
         exit;
