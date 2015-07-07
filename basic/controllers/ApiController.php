@@ -46,6 +46,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
         $eventId = $queryParams['id'];
+        $this->isEventIdExist($eventId);
         $userId = $this->getUserIdByToken($queryParams['token']);
         $subscriber = Subscribers::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
         if($subscriber){
@@ -124,6 +125,7 @@ class ApiController extends Controller
         $this->validateEventId($queryParams['id']);
         $this->limitAnfOffsetValidator($queryParams);
         $eventId = $queryParams['id'];
+        $this->isEventIdExist($eventId);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $data = (new \yii\db\Query())
@@ -207,6 +209,7 @@ class ApiController extends Controller
         $this->validateComment($queryParams);
         $userId = $this->getUserIdByToken($queryParams['token']);
         $eventId = $queryParams['id'];
+        $this->isEventIdExist($eventId);
         $text = htmlentities($queryParams['text']);
         $model = new Comments();
         $model->event_id = $eventId;
@@ -231,6 +234,7 @@ class ApiController extends Controller
         $this->validateEventId($queryParams['id']);
         $this->limitAnfOffsetValidator($queryParams);
         $eventId = $queryParams['id'];
+        $this->isEventIdExist($eventId);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $data = (new \yii\db\Query())
@@ -255,6 +259,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
         $eventId = $queryParams['id'];
+        $this->isEventIdExist($eventId);
         $userId = $this->getUserIdByToken($queryParams['token']);
         $eventModel = Events::find()->where(['event_id' => $eventId])->one();
         $tagsString = str_replace($eventModel->event_name.' '.$eventModel->description.' ', '', $eventModel->search_text);
@@ -297,6 +302,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
         $id = $queryParams['id'];
+        $this->isEventIdExist($id);
         $model = Events::find()->where(['event_id' => $id])->one();
         $model->status = 0;
         if($model->update(false)){
@@ -765,6 +771,20 @@ class ApiController extends Controller
         if(!isset($queryParams['tag']) || (empty($queryParams['tag'])&& $queryParams['tag'] !='0')){
             $error->error = 'BlankTag';
             $error->message = 'Tag are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+    }
+    
+    public function isEventIdExist($eventId){
+        $error = new Error;
+        $event = Events::find()->where(['event_id' => $eventId])->one();
+        if($event){
+            return;
+        }else{
+            $error->error = 'InvalidEventId';
+            $error->message = 'There are no event with this id';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
