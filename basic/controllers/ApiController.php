@@ -42,6 +42,38 @@ class ApiController extends Controller
         }
     }
     
+    public function actionSearchTags(){
+        $error = new Error;
+        $queryParams = Yii::$app->request->queryParams;
+        $this->limitAnfOffsetValidator($queryParams);
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $query = '';
+        if($queryParams['query'] || $queryParams['query'] == '0'){
+            $query = $queryParams['query'];
+        }else{
+            $error->error = 'BlankQuery';
+            $error->message = 'Query are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        $tags =  array();
+        $model = Tags::find()
+                    ->where('tag_name LIKE :query')
+                    ->addParams([':query'=>"$query%"])
+                    ->limit($limit)
+                    ->offset($offset)
+                    ->all();
+        foreach($model as $tag){
+           $tags[] = $tag->tag_name;
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( ['Tags'=>$tags], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        exit;
+         
+    }
+    
     public function actionIsSubscribed(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);

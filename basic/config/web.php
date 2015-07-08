@@ -18,6 +18,7 @@ $config = [
             'rules' => [
                 '/' => 'list/events',
                 'api/addComment' => 'api/add-comment',
+                'api/searchTags' => 'api/search-tags',
                 'api/isSubscribed' => 'api/is-subscribed',
                 'api/getEventsByTag' => 'api/get-events-by-tag',
                 'api/getTags' => 'api/get-tags',
