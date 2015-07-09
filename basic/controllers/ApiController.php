@@ -402,12 +402,20 @@ class ApiController extends Controller
             if(is_numeric($queryParams['dateFilter'])){
                 $filterDate = (int)$queryParams['dateFilter'];
                 $endOfdateFilter = $filterDate + (60*60*24);
+                $order = 'ASK';
                 
-                $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
+                if($timeOut === 'true'){
+                    $order = 'DESC';
+                    $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE meeting_date >= $filterDate AND 
-                 meeting_date <= $endOfdateFilter AND status = 1  ORDER BY date ASC LIMIT $offset, $limit";
-                
+                 meeting_date <= $time AND status = 1  ORDER BY date $order LIMIT $offset, $limit";
+                }else{
+                    $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
+                    description, user_id as userId, address, required_people_number as peopleNumber, 
+                    meeting_date as date FROM events WHERE meeting_date >= $time AND 
+                    meeting_date <= $endOfdateFilter AND status = 1  ORDER BY date $order LIMIT $offset, $limit";
+                }
             }else{
                 $error->error = 'NotIntDateFilter';
                 $error->message = 'Date filter must be integer';
