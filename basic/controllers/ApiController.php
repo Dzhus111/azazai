@@ -402,7 +402,7 @@ class ApiController extends Controller
             if(is_numeric($queryParams['dateFilter'])){
                 $filterDate = (int)$queryParams['dateFilter'];
                 $endOfdateFilter = $filterDate + (60*60*24);
-                $order = 'ASK';
+                $order = 'ASC';
                 
                 if($timeOut === 'true'){
                     $order = 'DESC';
@@ -572,12 +572,6 @@ class ApiController extends Controller
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
-        }elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ,]+$/u',$queryParams['name'])){
-            $error->error = 'InvalidName';
-            $error->message = 'Event name must contain just letters and numbers';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
         }
         elseif(mb_strlen($queryParams['name'], 'UTF-8')<5 || mb_strlen($queryParams['name'], 'UTF-8')>50 ){
             $error->error = 'OutOfRangeError';
@@ -589,13 +583,6 @@ class ApiController extends Controller
         if(!isset($queryParams['description']) || empty($queryParams['description'])){
             $error->error = 'BlankDescriptiont';
             $error->message = 'Event description are required';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
-        }
-        elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ,]+$/u',$queryParams['description'])){
-            $error->error = 'InvalidDescription';
-            $error->message = 'Event description must contain just letters and numbers';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
@@ -617,13 +604,6 @@ class ApiController extends Controller
         elseif(mb_strlen($queryParams['address'], 'UTF-8')<5 || mb_strlen($queryParams['address'], 'UTF-8')>200 ){
             $error->error = 'OutOfRangeError';
             $error->message = 'Event address must contain min 5 characters and max 200 characters';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
-        }
-         elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ,]+$/u',$queryParams['address'])){
-            $error->error = 'InvalidAddress';
-            $error->message = 'Event address must contain just letters and numbers';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
@@ -677,7 +657,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        elseif(!preg_match('/^[а-яА-ЯёЁa-zA-Z0-9 ,]+$/u',$queryParams['tags'])){
+        elseif(!preg_match('/^[\p{L}0-9,]+$/u',$queryParams['tags'])){
             $error->error = 'InvalidTags';
             $error->message = 'Event tags must contain just letters and numbers';
             header('Content-Type: application/json; charset=utf-8');
