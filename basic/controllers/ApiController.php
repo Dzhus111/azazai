@@ -44,6 +44,7 @@ class ApiController extends Controller
     
     public function actionSearchTags(){
         $error = new Error;
+        $ignoreTags = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
         $limit= $queryParams['limit'];
@@ -64,8 +65,22 @@ class ApiController extends Controller
                     ->addParams([':query'=>"$query%"])
                     ->limit($limit)
                     ->offset($offset)
+                    ->orderBy(['events_count'=> SORT_DESC])
                     ->all();
+        if($queryParams['ignore']){
+            if(!preg_match('/^[\p{L}0-9,]+$/u',$queryParams['ignore']) && $queryParams['ignore'] != '0'){
+                $error->error = 'InvalidTags';
+                $error->message = 'Event tags must contain just letters and numbers';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+            $ignoreTags = explode(",",$queryParams['ignore']);
+        }
         foreach($model as $tag){
+            if(in_array($tag->tag_name, $ignoreTags)){
+                continue;
+            }
            $tags[] = $tag->tag_name;
         }
         header('Content-Type: application/json; charset=utf-8');
