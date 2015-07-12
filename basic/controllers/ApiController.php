@@ -491,7 +491,7 @@ class ApiController extends Controller
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
-        $userId = 1;//OAuthVK::getUserIdToken($queryParams['token']);
+        $userId = OAuthVK::getUserIdToken($queryParams['token']);
        
         if(!$userId){
             $error = new Error;
@@ -514,7 +514,16 @@ class ApiController extends Controller
         $tags = explode(",",$queryParams['tags']);
         $searchText = $data['event_name']." ".$data['description'];
         foreach($tags as $tag){
-            $searchText = $searchText." ".$tag;
+            if(mb_strlen($tag, 'UTF-8')<3 || mb_strlen($tag, 'UTF-8')>20 ){
+                $error =  new Error;
+                $error->error = 'OutOfRangeError';
+                $error->message = 'Event tag must contain min 3 characters and max 20 characters';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }else{
+                $searchText = $searchText." ".$tag;
+            }
         }
         $data['search_text'] = $searchText;
         $modelData = ['Events'=>$data];
@@ -691,9 +700,9 @@ class ApiController extends Controller
         elseif((int)$queryParams['date']<=time()){
             $error->error = 'InvalidDate';
             $error->message = 'Event date must be bigger than current date';
-            header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
+            header('Content-Type: application/json; charset=utf-8');
         }
         if(!isset($queryParams['tags']) || empty($queryParams['tags'])){
             $error->error = 'BlankTags';
