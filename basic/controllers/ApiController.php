@@ -9,6 +9,7 @@ use yii\db\Query;
 use app\models\Events;
 use app\models\Comments;
 use app\models\Tags;
+use app\models\TagsEvents;
 use app\models\Subscribers;
 use app\models\EventsModel;
 use yii\web\Controller;
@@ -134,12 +135,20 @@ class ApiController extends Controller
                 exit;
             }
         }
+        $tagsData = Tags::find()->where(['tag_name' => $tag])->one();
+        $tagId = $tagsData->tag_id;
+        $tagsModel = TagsEvents::find()->where(['tag_id' => $tagId])->all();
+        $eventsIdsArray = array();
+        foreach($tagsModel as $eventId){
+            $eventsIdsArray[] = $eventId->event_id;
+        }
+        $eventsIds = implode(',', $eventsIdsArray);
         $data = (new \yii\db\Query())
                 ->select(['event_id as id', 'event_name as name', 'subscribers_count as subscribersCount',
                  'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
                  'meeting_date as date'])
                 ->from('events')
-                ->where("MATCH(search_text) AGAINST ('$tag') AND status = 1")
+                ->where(" event_id IN ($eventsIds) AND status = 1")
                 ->andWhere([$compareSymbol, 'meeting_date', $time])
                 ->limit($limit)
                 ->offset($offset)
@@ -352,6 +361,15 @@ class ApiController extends Controller
         $this->isEventIdExist($id);
         $model = Events::find()->where(['event_id' => $id])->one();
         $model->status = 0;
+        if(TagsEvents::find()->where(['event_id' => $id])->one()){
+            Yii::$app->db->createCommand
+            ("DELETE FROM tags_events WHERE event_id = $id")->execute();
+        }else{
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>false]);
+            exit;
+        }
+        
         if($model->update(false)){
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['succsess' => 'true']);
@@ -364,8 +382,8 @@ class ApiController extends Controller
             exit;
         }
         header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['success'=>true]);
-            exit;
+        echo json_encode( ['success'=>true]);
+        exit;
     }
         
     public function actionGetEventsList()
@@ -473,7 +491,7 @@ class ApiController extends Controller
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
-        $userId = OAuthVK::getUserIdToken($queryParams['token']);
+        $userId = 1;//OAuthVK::getUserIdToken($queryParams['token']);
        
         if(!$userId){
             $error = new Error;
@@ -500,18 +518,7 @@ class ApiController extends Controller
         }
         $data['search_text'] = $searchText;
         $modelData = ['Events'=>$data];
-        foreach($tags as $tag){
-            $searchTag = Tags::find()->where(['tag_name' => $tag])->one();
-            if($searchTag == null){
-                $tagsModel = new Tags();
-                $tagsModel->tag_name = $tag;
-                $tagsModel->events_count = 1;
-                $tagsModel->save(false);
-            }else{
-                $searchTag->events_count = $searchTag->events_count + 1;
-                $searchTag->update(false);
-            }
-        }
+        
         
         $model->load($modelData);
         if($model->save(false)){
@@ -520,6 +527,28 @@ class ApiController extends Controller
             $subscribersModel->user_id = $model->user_id;
             $subscribersModel->save(false);
             $jsonData =['id' => $model->event_id];
+            
+            foreach($tags as $tag){
+                $searchTag = Tags::find()->where(['tag_name' => $tag])->one();
+                if($searchTag == null){
+                    $tagsEvents = new TagsEvents;
+                    $tagsModel = new Tags();
+                    $tagsModel->tag_name = $tag;
+                    $tagsModel->events_count = 1;
+                    $tagsModel->save(false);
+                    $tagsEvents->tag_id = $tagsModel->tag_id;
+                    $tagsEvents->event_id = $model->event_id;
+                    $tagsEvents->save(false);               
+                }else{
+                    $tagsEvents = new TagsEvents;
+                    $searchTag->events_count = $searchTag->events_count + 1;
+                    $searchTag->update(false);
+                    $tagsEvents->tag_id = $searchTag->tag_id;
+                    $tagsEvents->event_id = $model->event_id;
+                    $tagsEvents->save(false);
+                }
+            }
+            
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE);
             exit;
@@ -529,6 +558,7 @@ class ApiController extends Controller
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE);
             exit;
             }
+        
     }
 
     /**

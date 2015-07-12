@@ -84,9 +84,11 @@ class SqlUtils{
         $db= Yii::$app->db;
         $sql_1 = "DROP TABLE IF EXISTS `tags_events`";
         $sql_2 ="CREATE TABLE IF NOT EXISTS tags_events(
+                id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
                 tag_id INT,
                 event_id int,
-                INDEX tag_id (tag_id)
+                INDEX tag_id (tag_id),
+                INDEX event_id (event_id)
                 )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
          $command_1 = $db->createCommand($sql_1)->execute();
          $command_2 = $db->createCommand($sql_2)->execute();  

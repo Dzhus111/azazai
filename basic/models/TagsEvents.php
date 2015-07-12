@@ -7,6 +7,7 @@ use Yii;
 /**
  * This is the model class for table "tags_events".
  *
+ * @property integer $id
  * @property integer $tag_id
  * @property integer $event_id
  */
@@ -26,7 +27,7 @@ class TagsEvents extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['tag_id', 'event_id'], 'integer']
+            [['id', 'tag_id', 'event_id'], 'integer']
         ];
     }
 
@@ -36,6 +37,7 @@ class TagsEvents extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
+            'id' => 'ID',
             'tag_id' => 'Tag ID',
             'event_id' => 'Event ID',
         ];
