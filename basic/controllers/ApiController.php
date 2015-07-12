@@ -51,6 +51,17 @@ class ApiController extends Controller
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $query = '';
+        if($queryParams['ignore']){
+            if(!preg_match('/^[\p{L}0-9,]+$/u',$queryParams['ignore']) && $queryParams['ignore'] != '0'){
+                $error->error = 'InvalidTags';
+                $error->message = 'Event tags must contain just letters and numbers';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+            $ignoreTags = explode(",",$queryParams['ignore']);
+            $limit += count($ignoreTags);
+        }
         if($queryParams['query'] || $queryParams['query'] == '0'){
             $query = $queryParams['query'];
         }else{
@@ -68,16 +79,6 @@ class ApiController extends Controller
                     ->offset($offset)
                     ->orderBy(['events_count'=> SORT_DESC])
                     ->all();
-        if($queryParams['ignore']){
-            if(!preg_match('/^[\p{L}0-9,]+$/u',$queryParams['ignore']) && $queryParams['ignore'] != '0'){
-                $error->error = 'InvalidTags';
-                $error->message = 'Event tags must contain just letters and numbers';
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( $error);
-                exit;
-            }
-            $ignoreTags = explode(",",$queryParams['ignore']);
-        }
         foreach($model as $tag){
             if(in_array($tag->tag_name, $ignoreTags)){
                 continue;
