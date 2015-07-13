@@ -5,6 +5,7 @@ use Yii;
 use yii\helpers\OAuthVK;
 use yii\helpers\SqlUtils;
 use yii\helpers\Error;
+use yii\helpers\GSM;
 use yii\db\Query;
 use app\models\Events;
 use app\models\Comments;
@@ -30,7 +31,21 @@ class ApiController extends Controller
             ],
         ];
     }
-
+    public function actionGetNotification(){
+        $queryParams = Yii::$app->request->queryParams;
+        $ids = null;
+        if(isset($queryParams['id'])){
+            $ids = $queryParams['id'];
+        }else{
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['error'=>'BlankId']);
+            exit;
+        }
+        $test = Gsm::sendMessageThroughGSM($ids, 'Test Message');
+        header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['result'=>$test]);
+            exit;
+    }
     public function actionDb(){
         if(SqlUtils::regenerateDb()){
             header('Content-Type: application/json; charset=utf-8');
@@ -264,7 +279,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
         $this->validateComment($queryParams);
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $userId = 1;//$this->getUserIdByToken($queryParams['token']);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
         $text = htmlentities($queryParams['text']);

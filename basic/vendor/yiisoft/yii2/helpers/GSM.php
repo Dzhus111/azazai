@@ -1,18 +1,17 @@
 <?php
 namespace yii\helpers;
-class GSM
+class Gsm
 {
     //Generic php function to send GCM push notification
     const GOOGLE_API_KEY = 'AIzaSyCbOrAQjE4kxxAX4S4SPCnuEb144VKkaro';
-    public static function sendMessageThroughGCM($user_id, $message) {
-    	//Google cloud messaging GCM-API url
+    public static function sendMessageThroughGSM($ids, $message) {
         $url = 'https://android.googleapis.com/gcm/send';
         $fields = array(
-            'user_id' => $user_id,
-            'data' => $message,
+            'registration_ids' => array($ids),
+            'data' => array('message' => $message),
         );		
         $headers = array(
-            'Authorization: key=' . GOOGLE_API_KEY,
+            'Authorization: key=' . self::GOOGLE_API_KEY,
             'Content-Type: application/json'
         );
         $ch = curl_init();
