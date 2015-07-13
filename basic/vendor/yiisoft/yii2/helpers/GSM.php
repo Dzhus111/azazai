@@ -3,7 +3,7 @@ namespace yii\helpers;
 class Gsm
 {
     //Generic php function to send GCM push notification
-    const GOOGLE_API_KEY = 'AIzaSyCbOrAQjE4kxxAX4S4SPCnuEb144VKkaro';
+    const GOOGLE_API_KEY = 'AIzaSyDMOpnIRD1wcazqUEeco9vN7qnu7ugl8LU';
     public static function sendMessageThroughGSM($ids, $message) {
         $url = 'https://android.googleapis.com/gcm/send';
         $fields = array(
