@@ -8,6 +8,7 @@ use yii\helpers\Error;
 use yii\helpers\GSM;
 use yii\db\Query;
 use app\models\Events;
+use app\models\Users;
 use app\models\Comments;
 use app\models\Tags;
 use app\models\TagsEvents;
@@ -31,6 +32,63 @@ class ApiController extends Controller
             ],
         ];
     }
+    
+    public function actionRegisterDevice(){
+        $queryParams = Yii::$app->request->queryParams;
+        $userId = $this->getUserIdByToken($queryParams['token']);
+        $deviceId = '';
+        $newDeviceId = '';
+        if(isset($queryParams['deviceId']) && !empty($queryParams['deviceId'])){
+            $deviceId = $queryParams['deviceId'];
+        }else{
+            $error = new Error;
+            $error->error = 'BlankDeviceId';
+            $error->message = 'Device id are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        $rowToUpdate = Users::find()->where("device_id = '$deviceId'")->one();
+        if(isset($queryParams['newDeviceId']) && !empty($queryParams['newDeviceId'])){
+            $newDeviceId = $queryParams['newDeviceId'];
+            if($rowToUpdate){
+                $rowToUpdate->device_id = $newDeviceId;
+                if($rowToUpdate->update(false)){
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode(['success' => true]);
+                    exit;
+                }else{
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode(['success' => false]);
+                    exit;
+                }
+                
+            }else{
+                $error = new Error;
+                $error->error = 'InvalidDeviceId';
+                $error->message = 'No data in data base for this device id';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+        if($rowToUpdate){
+            $error = new Error;
+            $error->error = 'DublicatedId';
+            $error->message = 'There is already data for this device id in data base';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+        $model = new Users;
+        $model->user_id = $userId;
+        $model->device_id = $deviceId;
+        $model->save(false);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    
     public function actionGetNotification(){
         $queryParams = Yii::$app->request->queryParams;
         $ids = null;

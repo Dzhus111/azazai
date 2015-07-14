@@ -7,9 +7,9 @@ use Yii;
 /**
  * This is the model class for table "users".
  *
+ * @property string $id
  * @property integer $user_id
- * @property string $user_name
- * @property string $avatar_link
+ * @property string $device_id
  */
 class Users extends \yii\db\ActiveRecord
 {
@@ -27,9 +27,8 @@ class Users extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['user_name', 'avatar_link'], 'required'],
-            [['avatar_link'], 'string'],
-            [['user_name'], 'string', 'max' => 255]
+            [['user_id'], 'integer'],
+            [['device_id'], 'string', 'max' => 500]
         ];
     }
 
@@ -39,9 +38,9 @@ class Users extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
+            'id' => 'ID',
             'user_id' => 'User ID',
-            'user_name' => 'User Name',
-            'avatar_link' => 'Avatar Link',
+            'device_id' => 'Device ID',
         ];
     }
 }

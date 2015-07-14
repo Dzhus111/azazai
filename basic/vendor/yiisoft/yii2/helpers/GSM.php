@@ -4,7 +4,7 @@ class Gsm
 {
     //Generic php function to send GCM push notification
     const GOOGLE_API_KEY = 'AIzaSyDMOpnIRD1wcazqUEeco9vN7qnu7ugl8LU';
-    public static function sendMessageThroughGSM($ids, $message) {
+    public static function sendMessageThroughGSM(array $ids, $message) {
         $url = 'https://android.googleapis.com/gcm/send';
         $fields = array(
             'registration_ids' => array($ids),
@@ -23,9 +23,6 @@ class Gsm
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
         $result = curl_exec($ch);				
-        if ($result === FALSE) {
-            die('Curl failed: ' . curl_error($ch));
-        }
         curl_close($ch);
         return $result;
     }

@@ -8,7 +8,7 @@ class SqlUtils{
         $sql_2 ="CREATE TABLE IF NOT EXISTS events(
                 event_id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
                 event_name varchar(255),
-                description varchar(255),
+                description varchar(500),
                 address text,
                 required_people_number int,
                 subscribers_count int,
@@ -94,12 +94,27 @@ class SqlUtils{
          $command_2 = $db->createCommand($sql_2)->execute();  
     }
     
+    public static function createUsersTable(){
+        $db= Yii::$app->db;
+        $sql_1 = "DROP TABLE IF EXISTS `users`";
+        $sql_2 ="CREATE TABLE IF NOT EXISTS users(
+                id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                user_id INT,
+                device_id varchar(500),
+                INDEX users_users_id (user_id),
+                INDEX device_id (device_id)
+                )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
+         $command_1 = $db->createCommand($sql_1)->execute();
+         $command_2 = $db->createCommand($sql_2)->execute();  
+    }
+    
     public static function regenerateDb(){
         self::createEventsTable();
         self::createCommentsTable();
         self::createSubscribersTable();
         self::createTagsTable();
         self::createTagsEventsTable();
+        self::createUsersTable();
         return true;
     }
 }
