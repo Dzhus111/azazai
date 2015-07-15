@@ -211,18 +211,12 @@ class ApiController extends Controller
         }
         $tagsData = Tags::find()->where(['tag_name' => $tag])->one();
         $tagId = $tagsData->tag_id;
-        $tagsModel = TagsEvents::find()->where(['tag_id' => $tagId])->all();
-        $eventsIdsArray = array();
-        foreach($tagsModel as $eventId){
-            $eventsIdsArray[] = $eventId->event_id;
-        }
-        $eventsIds = implode(',', $eventsIdsArray);
         $data = (new \yii\db\Query())
                 ->select(['event_id as id', 'event_name as name', 'subscribers_count as subscribersCount',
                  'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
                  'meeting_date as date'])
                 ->from('events')
-                ->where(" event_id IN ($eventsIds) AND status = 1")
+                ->where(" event_id IN (SELECT event_id FROM tags_events where tag_id = $tagId) AND status = 1")
                 ->andWhere([$compareSymbol, 'meeting_date', $time])
                 ->limit($limit)
                 ->offset($offset)
@@ -337,7 +331,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
         $this->validateComment($queryParams);
-        $userId = 1;//$this->getUserIdByToken($queryParams['token']);
+        $userId = $this->getUserIdByToken($queryParams['token']);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
         $text = htmlentities($queryParams['text']);
