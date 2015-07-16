@@ -350,8 +350,7 @@ class ApiController extends Controller
             echo json_encode( ['success'=>false]);
             exit;
         }
-}
-    
+    }
     
     public function actionGetSubscribers(){
         $queryParams = Yii::$app->request->queryParams;
@@ -385,38 +384,32 @@ class ApiController extends Controller
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
         $userId = $this->getUserIdByToken($queryParams['token']);
-        $eventModel = Events::find()->where(['event_id' => $eventId])->one();
-        $tagsString = str_replace($eventModel->event_name.' '.$eventModel->description.' ', '', $eventModel->search_text);
-        $tags = explode(' ', $tagsString);
-        $subscriber = Subscribers::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
+        $event = Events::find()->where(['event_id' => $eventId])->one();
+        if($event->user_id == $userId){
+            $error = new Error;
+            $error->error = "SubscribeError";
+            $error->message = 'Event creator can not subscribe or unsubscribe';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }                  
+        $subscriber = Subscribers::find()->where("event_id = $eventId AND user_id = $userId")->one();
         if($subscriber){
             Yii::$app->db->createCommand
             ("DELETE FROM subscribers WHERE user_id = $userId AND event_id = $eventId")->execute();
-            $event = Events::find()->where(['event_id' => $eventId])->one();
             $event->subscribers_count = $event->subscribers_count - 1;
             $event ->update(false);
-            foreach($tags as $tag){
-                $searchTag = Tags::find()->where(['tag_name' => $tag])->one();
-                $searchTag->events_count = $searchTag->events_count - 1;
-                $searchTag->update(false);
-            }
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['success'=>true]);
             exit;
         }
         
-        
         $model = new Subscribers;
         $model->event_id = $eventId;
         $model->user_id = $userId;
         $model->save();
-        foreach($tags as $tag){
-                $searchTag = Tags::find()->where(['tag_name' => $tag])->one();
-                $searchTag->events_count = $searchTag->events_count + 1;
-                $searchTag->update(false);
-            }
-        $eventModel->subscribers_count = $eventModel->subscribers_count + 1;
-        $eventModel ->update(false);
+        $event->subscribers_count = $event->subscribers_count + 1;
+        $event ->update(false);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['success'=>true]);
         exit;
@@ -559,7 +552,7 @@ class ApiController extends Controller
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
-        $userId = OAuthVK::getUserIdToken($queryParams['token']);
+        $userId = 1;//OAuthVK::getUserIdToken($queryParams['token']);
        
         if(!$userId){
             $error = new Error;
@@ -766,6 +759,7 @@ class ApiController extends Controller
             exit;
         }
         elseif((int)$queryParams['date']<=time()){
+                                    
             $error->error = 'InvalidDate';
             $error->message = 'Event date must be bigger than current date';
             echo json_encode( $error);
