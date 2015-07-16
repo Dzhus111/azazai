@@ -210,7 +210,12 @@ class ApiController extends Controller
             }
         }
         $tagsData = Tags::find()->where(['tag_name' => $tag])->one();
-        $tagId = $tagsData->tag_id;
+        if($tagsData){
+            $tagId = $tagsData->tag_id;
+        }else{
+            $tagId = -1;
+        }
+        
         $data = (new \yii\db\Query())
                 ->select(['event_id as id', 'event_name as name', 'subscribers_count as subscribersCount',
                  'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
@@ -424,24 +429,17 @@ class ApiController extends Controller
         $model->status = 0;
         if(TagsEvents::find()->where(['event_id' => $id])->one()){
             Yii::$app->db->createCommand
+            ("UPDATE tags SET events_count = events_count - 1  WHERE tag_id IN 
+                (SELECT tag_id FROM tags_events WHERE event_id = $id )")->execute();
+            Yii::$app->db->createCommand
             ("DELETE FROM tags_events WHERE event_id = $id")->execute();
+            $model->update(false);
         }else{
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['success'=>false]);
+            echo json_encode( ['error'=>'DeleteError']);
             exit;
         }
         
-        if($model->update(false)){
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['succsess' => 'true']);
-            exit;
-        }else{
-            $error->error = 'NotFindId';
-            $error->message = 'Event id is not finded';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
-        }
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['success'=>true]);
         exit;
@@ -552,7 +550,7 @@ class ApiController extends Controller
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
-        $userId = 1;//OAuthVK::getUserIdToken($queryParams['token']);
+        $userId = $this->getUserIdByToken($queryParams['token']);
        
         if(!$userId){
             $error = new Error;
