@@ -7,8 +7,9 @@ class Gsm
     public static function sendMessageThroughGSM(array $ids, $message) {
         $url = 'https://android.googleapis.com/gcm/send';
         $fields = array(
-            'registration_ids' => array($ids),
-            'data' => array('message' => $message),
+            'registration_ids' => $ids,
+            'data' => array('data' => array('title' => 'Yo', 'message' => 'Yo, this is a notification', 'icon' => 
+			'http://icons.iconarchive.com/icons/yellowicon/game-stars/256/Mario-icon.png')),
         );		
         $headers = array(
             'Authorization: key=' . self::GOOGLE_API_KEY,
