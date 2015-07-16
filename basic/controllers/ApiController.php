@@ -91,9 +91,9 @@ class ApiController extends Controller
     
     public function actionGetNotification(){
         $queryParams = Yii::$app->request->queryParams;
-        $ids = null;
+        $ids = array();
         if(isset($queryParams['id'])){
-            $ids = $queryParams['id'];
+            $ids[] = $queryParams['id'];
         }else{
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['error'=>'BlankId']);
