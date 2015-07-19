@@ -383,7 +383,7 @@ class ApiController extends Controller
             $event = Events::find()->where(['event_id' => $eventId])->one();
             $users = Users::find()->where(['user_id' => $event->user_id])->one();
             Gsm::sendMessageThroughGSM(array($users->device_id), 
-                ['id' => $eventId , 'message' => 'К вашему событию: '.$event->event_name.', добавлен новый комментарий']);
+                ['comment' => intval($eventId)]);
             $jsonData = ['userId' => $userId, 'date' => $model->date];
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
