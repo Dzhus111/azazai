@@ -18,6 +18,7 @@ $config = [
             'rules' => [
                 '/' => 'list/events',
                 'api/addComment' => 'api/add-comment',
+                'api/getEventById' => 'api/get-event-by-id',
                 'api/registerDevice' => 'api/register-device',
                 'api/getNotification' => 'api/get-notification',
                 'api/searchTags' => 'api/search-tags',

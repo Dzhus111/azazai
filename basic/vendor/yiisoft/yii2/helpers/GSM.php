@@ -8,8 +8,7 @@ class Gsm
         $url = 'https://android.googleapis.com/gcm/send';
         $fields = array(
             'registration_ids' => $ids,
-            'data' => array('data' => array('title' => 'Yo', 'message' => 'Yo, this is a notification', 'icon' => 
-			'http://icons.iconarchive.com/icons/yellowicon/game-stars/256/Mario-icon.png')),
+            'data' => array('data' => $message),
         );		
         $headers = array(
             'Authorization: key=' . self::GOOGLE_API_KEY,

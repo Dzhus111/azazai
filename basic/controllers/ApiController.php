@@ -33,6 +33,30 @@ class ApiController extends Controller
         ];
     }
     
+    public function actionGetEventById(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams['id']);
+        $id = $queryParams['id'];
+        $this->isEventIdExist($id);
+        $model = Events::find()->where(['event_id' => $id])->one();
+        $q = 'SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
+                 description, user_id as userId, address, required_people_number as peopleNumber, 
+                 meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit"';
+        $jsondata = [
+                        'id' => $model->event_id, 
+                        'name' => $model->event_name, 
+                        'subscribersCount' => $model->subscribers_count,
+                        'description' => $model->description,
+                        'userId' => $model->user_id,
+                        'address' => $model->address,
+                        'peopleNumber' => $model->required_people_number,
+                        'date' => $model->meeting_date,
+                     ];
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( ['Event' => $jsondata], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        exit;
+    }
+    
     public function actionRegisterDevice(){
         $queryParams = Yii::$app->request->queryParams;
         $userId = $this->getUserIdByToken($queryParams['token']);
@@ -49,6 +73,17 @@ class ApiController extends Controller
             exit;
         }
         $rowToUpdate = Users::find()->where("device_id = '$deviceId'")->one();
+        if($rowToUpdate){
+            if($rowToUpdate->user_id != $userId){
+                        $rowToUpdate->user_id = $userId;
+                        $rowToUpdate->device_id = $deviceId;
+                        if($rowToUpdate->update(false)){
+                            header('Content-Type: application/json; charset=utf-8');
+                            echo json_encode(['success' => true]);
+                            exit;
+                        }
+            }
+        }  
         if(isset($queryParams['newDeviceId']) && !empty($queryParams['newDeviceId'])){
             $newDeviceId = $queryParams['newDeviceId'];
             if($rowToUpdate){
@@ -64,11 +99,12 @@ class ApiController extends Controller
                 }
                 
             }else{
-                $error = new Error;
-                $error->error = 'InvalidDeviceId';
-                $error->message = 'No data in data base for this device id';
+                $model = new Users;
+                $model->user_id = $userId;
+                $model->device_id = $newDeviceId;
+                $model->save(false);
                 header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( $error);
+                echo json_encode(['success' => true]);
                 exit;
             }
         }
@@ -101,9 +137,10 @@ class ApiController extends Controller
         }
         $test = Gsm::sendMessageThroughGSM($ids, 'Test Message');
         header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['result'=>$test]);
-            exit;
+        echo json_encode( ['result'=>$test]);
+        exit;
     }
+    
     public function actionDb(){
         if(SqlUtils::regenerateDb()){
             header('Content-Type: application/json; charset=utf-8');
@@ -346,13 +383,17 @@ class ApiController extends Controller
         $model->comment_text = $text;
         $model->date = time();
         if($model->save(false)){
-            $jsonData = ['commentId' => $model->comment_id, 'date' => $model->date];
+            $event = Events::find()->where(['event_id' => $eventId])->one();
+            $users = Users::find()->where(['user_id' => $event->user_id])->one();
+            Gsm::sendMessageThroughGSM(array($users->device_id), 
+                ['id' => $eventId , 'message' => 'К вашему событию: '.$event->event_name.', добавлен новый комментарий']);
+            $jsonData = ['userId' => $userId, 'date' => $model->date];
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
             exit;
         }else{
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['success'=>false]);
+            echo json_encode( ['error'=>'SaveError']);
             exit;
         }
     }
@@ -415,6 +456,9 @@ class ApiController extends Controller
         $model->save();
         $event->subscribers_count = $event->subscribers_count + 1;
         $event ->update(false);
+        $users = Users::find()->where(['user_id' => $event->user_id])->one();
+        Gsm::sendMessageThroughGSM(array($users->device_id), 
+            ['id' => $eventId , 'message' => 'У вашего события: '.$event->event_name.', новый подписчик']);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['success'=>true]);
         exit;
@@ -439,7 +483,13 @@ class ApiController extends Controller
             echo json_encode( ['error'=>'DeleteError']);
             exit;
         }
-        
+        $users = Users::find()->where("user_id IN (SELECT FROM subscribers WHERE event_id = $id)")->all();
+        $ids = [];
+        foreach($users as $user){
+            $ids[] = $user->device_id;
+        }
+        Gsm::sendMessageThroughGSM($ids, 
+            ['id' => $id , 'message' => 'Cобытие: '.$model->event_name.', отменено']);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['success'=>true]);
         exit;
