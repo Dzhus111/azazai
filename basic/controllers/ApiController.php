@@ -39,9 +39,6 @@ class ApiController extends Controller
         $id = $queryParams['id'];
         $this->isEventIdExist($id);
         $model = Events::find()->where(['event_id' => $id])->one();
-        $q = 'SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
-                 description, user_id as userId, address, required_people_number as peopleNumber, 
-                 meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit"';
         $jsondata = [
                         'id' => $model->event_id, 
                         'name' => $model->event_name, 
