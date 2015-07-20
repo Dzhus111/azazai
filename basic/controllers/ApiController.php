@@ -380,13 +380,13 @@ class ApiController extends Controller
         $model->comment_text = $text;
         $model->date = time();
         if($model->save(false)){
+            $jsonData = ['userId' => $userId, 'date' => $model->date];
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK); 
             $event = Events::find()->where(['event_id' => $eventId])->one();
             $users = Users::find()->where(['user_id' => $event->user_id])->one();
             Gsm::sendMessageThroughGSM(array($users->device_id), 
                 ['comment' => array(eventId => intval($eventId), text => $text, userId => intval($userId))]);
-            $jsonData = ['userId' => $userId, 'date' => $model->date];
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode($jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
             exit;
         }else{
             header('Content-Type: application/json; charset=utf-8');
