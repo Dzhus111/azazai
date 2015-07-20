@@ -50,7 +50,7 @@ class ApiController extends Controller
                         'date' => $model->meeting_date,
                      ];
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( ['Event' => $jsondata], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        echo json_encode($jsondata, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
         exit;
     }
     
