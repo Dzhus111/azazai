@@ -52,6 +52,7 @@ class ApiController extends Controller
         
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($jsondata, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        exit;
     }
     
     public function actionRegisterDevice(){
