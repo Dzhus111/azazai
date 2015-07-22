@@ -34,7 +34,7 @@ class ApiController extends Controller
     }
     
     public function actionGetEventById(){
-        /*$queryParams = Yii::$app->request->queryParams;
+        $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams['id']);
         $id = $queryParams['id'];
         $this->isEventIdExist($id);
@@ -48,12 +48,10 @@ class ApiController extends Controller
                         'address' => $model->address,
                         'peopleNumber' => $model->required_people_number,
                         'date' => $model->meeting_date,
-                     ];*/
+                     ];
         
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['ttt'], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
-        Gsm::sendMessageThroughGSM(['ckYFGd1d5K0:APA91bGfjjvJV56PE6du-MEYyTPGtfwvhrdUv9HjBVvBFruf8u8drrg2T4lIiWH1o7R-wEcpAmxkNEAuhJwo7SOqk-FGv-x926gh1nwfsWJmUWQZOKXR93pLJYz4EO6Q8Na_gggFMChu'],['fsdfdsfs']);
-        exit;
+        echo json_encode($jsondata, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
     }
     
     public function actionRegisterDevice(){
