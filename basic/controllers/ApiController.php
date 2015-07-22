@@ -387,7 +387,7 @@ class ApiController extends Controller
             $event = Events::find()->where(['event_id' => $eventId])->one();
             $users = Users::find()->where(['user_id' => $event->user_id])->one();
             Gsm::sendMessageThroughGSM(array($users->device_id), 
-                ['comment' => array(eventId => intval($eventId), text => $text, userId => intval($userId))]);
+                ['comment' => array('eventId' => intval($eventId), 'text' => $text, 'userId' => intval($userId))]);
             exit;
         }else{
             header('Content-Type: application/json; charset=utf-8');
@@ -455,10 +455,10 @@ class ApiController extends Controller
         $event->subscribers_count = $event->subscribers_count + 1;
         $event ->update(false);
         $users = Users::find()->where(['user_id' => $event->user_id])->one();
-        Gsm::sendMessageThroughGSM(array($users->device_id), 
-            ['id' => $eventId , 'message' => 'У вашего события: '.$event->event_name.', новый подписчик']);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['success'=>true]);
+        Gsm::sendMessageThroughGSM(array($users->device_id), 
+            ['subscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
         exit;
     }
     
@@ -475,21 +475,21 @@ class ApiController extends Controller
                 (SELECT tag_id FROM tags_events WHERE event_id = $id )")->execute();
             Yii::$app->db->createCommand
             ("DELETE FROM tags_events WHERE event_id = $id")->execute();
-            $model->update(false);
-        }else{
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['error'=>'DeleteError']);
-            exit;
+            if(!$model->update(false)){
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( ['error'=>'DeleteError']);
+                exit;
+            }
         }
-        $users = Users::find()->where("user_id IN (SELECT FROM subscribers WHERE event_id = $id)")->all();
+        
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( ['success'=>true]);
+        $users = Users::find()->where("user_id IN (SELECT user_id FROM subscribers WHERE event_id = $id)")->all();
         $ids = [];
         foreach($users as $user){
             $ids[] = $user->device_id;
         }
-        Gsm::sendMessageThroughGSM($ids, 
-            ['id' => $id , 'message' => 'Cобытие: '.$model->event_name.', отменено']);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( ['success'=>true]);
+        Gsm::sendMessageThroughGSM($ids, ['cancel' => ['eventId' =>$id]]);
         exit;
     }
         
