@@ -489,7 +489,7 @@ class ApiController extends Controller
         foreach($users as $user){
             $ids[] = $user->device_id;
         }
-        Gsm::sendMessageThroughGSM($ids, ['cancel' => ['eventId' =>$id]]);
+        Gsm::sendMessageThroughGSM($ids, ['cancelEventId' => intval($id)]);
         exit;
     }
         
