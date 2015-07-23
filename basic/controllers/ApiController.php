@@ -181,7 +181,7 @@ class ApiController extends Controller
         }
         $tags =  array();
         $model = Tags::find()
-                    ->where('tag_name LIKE :query')
+                    ->where('tag_name LIKE :query and events_count != 0')
                     ->addParams([':query'=>"$query%"])
                     ->limit($limit)
                     ->offset($offset)
@@ -274,6 +274,7 @@ class ApiController extends Controller
         $data = (new \yii\db\Query())
                 ->select(['tag_name as tagName', 'events_count as eventsCount'])
                 ->from('tags')
+                ->where('events_count != 0')
                 ->limit($limit)
                 ->offset($offset)
                 ->orderBy(['events_count'=>SORT_DESC])
