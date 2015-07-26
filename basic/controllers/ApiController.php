@@ -96,6 +96,12 @@ class ApiController extends Controller
                     exit;
                 }
                 
+            }elseif($row = Users::find()->where("user_id = '$userId'")->one()){
+                $row->device_id = $newDeviceId;
+                $row->update(false);
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => true]);
+                exit;
             }else{
                 $model = new Users;
                 $model->user_id = $userId;
