@@ -81,9 +81,15 @@ class ApiController extends Controller
                             exit;
                         }
             }
-        }  
+        }
         if(isset($queryParams['newDeviceId']) && !empty($queryParams['newDeviceId'])){
             $newDeviceId = $queryParams['newDeviceId'];
+            $rowToUpdate_2 = Users::find()->where("device_id = '$newDeviceId'")->one();
+            if($rowToUpdate_2){
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode(['error' => 'NoDataToUpdate']);
+                    exit;
+            }
             if($rowToUpdate){
                 $rowToUpdate->device_id = $newDeviceId;
                 if($rowToUpdate->update(false)){
@@ -92,16 +98,10 @@ class ApiController extends Controller
                     exit;
                 }else{
                     header('Content-Type: application/json; charset=utf-8');
-                    echo json_encode(['success' => false]);
+                    echo json_encode(['error' => 'NoDataToUpdate']);
                     exit;
                 }
                 
-            }elseif($row = Users::find()->where("user_id = '$userId'")->one()){
-                $row->device_id = $newDeviceId;
-                $row->update(false);
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode(['success' => true]);
-                exit;
             }else{
                 $model = new Users;
                 $model->user_id = $userId;
