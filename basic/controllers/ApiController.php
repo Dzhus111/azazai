@@ -454,7 +454,7 @@ class ApiController extends Controller
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['success'=>true]);
             Gsm::sendMessageThroughGSM(array($users->device_id), 
-            ['subscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
+            ['unsubscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
             exit;
         }
         
