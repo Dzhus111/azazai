@@ -18,6 +18,7 @@ use yii\data\ActiveDataProvider;
  */
 class ListController extends Controller
 {
+    const STATUS_ACTIVE = 1;
     public function behaviors()
     {
         return [
@@ -36,8 +37,18 @@ class ListController extends Controller
      */
      
      public function actionEvents(){
+        $status = self::STATUS_ACTIVE;
+        $queryParams = Yii::$app->request->queryParams;
+        $time = time();
+        $dbQuery = "status = 0 and meeting_date > $time ORDER BY meeting_date ASC";
+        $query = Events::find()->where($dbQuery);;
+        if(!empty($queryParams['q'])){
+            $q = $queryParams['q'];
+            $q =  preg_replace ("/[^a-zA-ZА-Яа-я0-9\s]/u","",$q);
+            $query = Events::find()->where("MATCH(search_text) AGAINST ('$q') ".$dbQuery);
+        }
         $dataProvider = new ActiveDataProvider([
-        'query' => Events::find(),
+        'query' => $query,
         'pagination' => [
         'pageSize' => 20,
                         ],

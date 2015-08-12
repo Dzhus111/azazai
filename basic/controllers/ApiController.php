@@ -436,7 +436,7 @@ class ApiController extends Controller
         $this->isEventIdExist($eventId);
         $userId = $this->getUserIdByToken($queryParams['token']);
         $event = Events::find()->where(['event_id' => $eventId])->one();
-        $users = Users::find()->where(['user_id' => $event->user_id])->one();
+        $users = Users::find()->where(['user_id' => $event->user_id])->all();
         if($event->user_id == $userId){
             $error = new Error;
             $error->error = "SubscribeError";
@@ -444,7 +444,7 @@ class ApiController extends Controller
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
-        }                  
+        }
         $subscriber = Subscribers::find()->where("event_id = $eventId AND user_id = $userId")->one();
         if($subscriber){
             Yii::$app->db->createCommand
