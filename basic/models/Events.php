@@ -48,14 +48,14 @@ class Events extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'subscribers_count' => "Subscribers count",
+            'subscribers_count' => "Количество подписавшихся",
             'event_id' => 'Event ID',
-            'event_name' => 'Event Name',
-            'description' => 'Description',
-            'address' => 'Address',
-            'required_people_number' => 'Required People Number',
+            'event_name' => 'Название',
+            'description' => 'Описание',
+            'address' => 'Место встречи (адрес)',
+            'required_people_number' => 'Необходимое количество людей',
             'created_date' => 'Created Date',
-            'meeting_date' => 'Meeting  Date',
+            'meeting_date' => 'Дата и время встречи',
             'status' => 'Status',
             'search_text' => 'Search Text',
             'user_id' => 'User ID',
