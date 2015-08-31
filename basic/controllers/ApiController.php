@@ -608,15 +608,6 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
         $userId = $this->getUserIdByToken($queryParams['token']);
-       
-        if(!$userId){
-            $error = new Error;
-            $error->error = 'InvalidToken';
-            $error->message = 'Token must be valid';
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( $error);
-            exit;
-        }
         
         $data['user_id'] = $userId;
         $data['subscribers_count'] = 1;

@@ -1,10 +1,11 @@
 <?php
 namespace yii\helpers;
+use yii\web\Session;
 class OAuthVK {
 
     const APP_ID = 4966821; //ID приложения
     const APP_SECRET = '8XyPLv1r7jOx6ovlVeCO'; //Защищенный ключ
-    const URL_CALLBACK = 'http://events.net/list/vkontakte'; //URL сайта до этого скрипта-обработчика 
+    const URL_CALLBACK = 'http://events.net/'; //URL сайта до этого скрипта-обработчика
     const URL_ACCESS_TOKEN = 'https://oauth.vk.com/access_token';
     const URL_AUTHORIZE = 'https://oauth.vk.com/authorize';
     const URL_GET_PROFILES = 'https://api.vk.com/method/getProfiles';
@@ -20,13 +21,13 @@ class OAuthVK {
     /**
      * @url https://vk.com/dev/auth_sites
      */
-    public static function goToAuth()
+    public static function goToAuth($path)
     {
         Utils::redirect(self::URL_AUTHORIZE .
             '?client_id=' . self::APP_ID .
             '&scope=offline' .
-            '&redirect_uri=' . urlencode(self::URL_CALLBACK) .
-            '&response_type=code');
+            '&redirect_uri=' . urlencode(self::URL_CALLBACK.$path) .
+            '&response_type=code&display=popup');
     }
     
     public static function getUserIdToken($token){
@@ -51,16 +52,19 @@ class OAuthVK {
         if (empty($user->uid) || empty($user->first_name) || empty($user->last_name)) {
             return false;
         }
-
+        $session = new Session;
+        $session->open();
+        $session['userId'] = $user->user_id;
         return $user->uid;
     }
     
-    public static function getToken() {
+    public static function getToken($code) {
         $url = self::URL_ACCESS_TOKEN .
             '?client_id=' . self::APP_ID .
             '&client_secret=' . self::APP_SECRET .
-            '&code=' . $_GET['code'] .
-            '&redirect_uri=' . urlencode(self::URL_CALLBACK);
+            '&code=' .$code .
+            '&redirect_uri=' . urlencode('http://events.net/list/create');
+
 
         if (!($res = @file_get_contents($url))) {
             return false;
@@ -70,11 +74,12 @@ class OAuthVK {
         if (empty($res->access_token) || empty($res->user_id)) {
             return false;
         }
-        session_start();
-        $_SESSION['token'] = $res->access_token;
-        $_SESSION['userId'] = $res->user_id;;
+        $session = new Session;
+        $session->open();
+        $session['token'] = $res->access_token;
+        $session['userId'] = $res->user_id;
 
-        return true;
+        return  true;
     }
 
     /**
@@ -84,10 +89,6 @@ class OAuthVK {
      
      
     public static function getUser() {
-        session_start();
-        if (!$_SESSION['userId']) {
-            return false;
-        }
 
         $url = self::URL_GET_PROFILES.
             '?uid=' . $_SESSION['userId'] .

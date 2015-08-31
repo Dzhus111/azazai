@@ -12,13 +12,15 @@
         "irc": "irc://irc.freenode.net/yii",
         "source": "https://github.com/yiisoft/yii2"
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "require": {
         "php": ">=5.4.0",
         "yiisoft/yii2": ">=2.0.4",
         "yiisoft/yii2-bootstrap": "*",
         "yiisoft/yii2-swiftmailer": "*",
-        "2amigos/yii2-date-time-picker-widget" : "~1.0"
+        "2amigos/yii2-date-time-picker-widget" : "~1.0",
+        "kop/yii2-scroll-pager": "dev-master",
+        "darkcs/yii2-infinite-scroll": "*"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",
