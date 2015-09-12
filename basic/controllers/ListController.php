@@ -70,9 +70,14 @@ class ListController extends Controller
      public function actionEvents(){
         $statusActive = self::STATUS_ACTIVE;
         $queryParams = Yii::$app->request->queryParams;
+         $tagCondition = '';
+         if(isset($queryParams['tagId'])){
+             $tagId = (int)$queryParams['tagId'];
+             $tagCondition = "and event_id IN (SELECT event_id FROM tags_events where tag_id = $tagId)";
+         }
         $time = time();
-        $dbQuery = "status = $statusActive and meeting_date > $time ORDER BY meeting_date ASC";
-        $query = Events::find()->where($dbQuery);;
+        $dbQuery = "status = $statusActive and meeting_date > $time $tagCondition ORDER BY meeting_date ASC";
+        $query = Events::find()->where($dbQuery);
         if(!empty($queryParams['q'])){
             $q = $queryParams['q'];
             $q =  preg_replace ("/[^a-zA-ZА-Яа-я0-9\s]/u","",$q);
@@ -105,8 +110,7 @@ class ListController extends Controller
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return mixed
      */
-    public function actionCreate()
-    {
+    public function actionCreate(){
 
         if(is_null( $this->getUserId())){
             $this->loginVk();
@@ -196,6 +200,36 @@ class ListController extends Controller
             }
         }
 
+    }
+
+    public function actionMyEvents(){
+        if(is_null( $this->getUserId())){
+            $this->loginVk();
+        }
+        $userId = $this->getUserId();
+        $time = time();
+        $queryParams = Yii::$app->request->queryParams;
+        $mod = 'subscribed';
+        $query = '';
+        if(!empty($queryParams['mod']) && $queryParams['mod'] == 'created'){
+            $mod = 'created';
+
+        }
+
+        if($mod == 'subscribed'){
+            $query = Events::find()->where("event_id IN (select event_id from subscribers where user_id = $userId)
+            and meeting_date > $time order by meeting_date DESC, event_id");
+        }elseif($mod == 'created'){
+            $query = Events::find()->where("user_id = $userId  and meeting_date > $time order by meeting_date DESC, event_id");
+        }
+
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+            'pagination' => [
+                'pageSize' => 5,
+            ],
+        ]);
+        return $this->render('user_events', ['dataProvider' => $dataProvider]);
     }
 
     /**
