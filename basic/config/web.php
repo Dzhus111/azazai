@@ -6,12 +6,17 @@ $config = [
     'id' => 'basic',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
+    'aliases' => [
+        '@images' => dirname(__DIR__).'\images',
+    ],
     'components' => [
+
         
         'request' => [
             'cookieValidationKey' => 'pImaLs8tXTbljqdD9KPPpmWHW-MFEOqp',
         ],
         'urlManager' => [
+            'class' => 'yii\web\urlManager',
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'enableStrictParsing' => true,

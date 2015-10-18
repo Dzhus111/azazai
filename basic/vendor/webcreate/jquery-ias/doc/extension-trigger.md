@@ -51,7 +51,7 @@ Allows you to override the html. The `{text}` placeholder will be replace by the
     <dd>string</dd>
 
     <dt>Default</dt>
-    <dd>Load previous items</dd>
+    <dd>Показать предыдущие</dd>
 </dl>
 
 Text of the link that will load the previous page.

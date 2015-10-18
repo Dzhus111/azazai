@@ -967,59 +967,6 @@
         ]
     },
     {
-        "name": "kop/yii2-scroll-pager",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/kop/yii2-scroll-pager.git",
-            "reference": "9e2f1a53db8bb5f50b906a0874b21a071a6215fc"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/kop/yii2-scroll-pager/zipball/9e2f1a53db8bb5f50b906a0874b21a071a6215fc",
-            "reference": "9e2f1a53db8bb5f50b906a0874b21a071a6215fc",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.4.0",
-            "webcreate/jquery-ias": "~2.2.0",
-            "yiisoft/yii2": "*"
-        },
-        "require-dev": {
-            "codeception/codeception": "~2.0"
-        },
-        "time": "2015-08-13 19:58:46",
-        "type": "yii2-extension",
-        "installation-source": "source",
-        "autoload": {
-            "psr-4": {
-                "kop\\y2sp\\": ""
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Ivan Koptiev",
-                "email": "ivan.koptiev@codex.systems",
-                "role": "Developer"
-            }
-        ],
-        "description": "Infinite AJAX scrolling for Yii2 ListView widget",
-        "homepage": "http://kop.github.io/yii2-scroll-pager/",
-        "keywords": [
-            "pager",
-            "pagination",
-            "scroll",
-            "scrolling",
-            "yii",
-            "yii2"
-        ]
-    },
-    {
         "name": "bower-asset/bootstrap",
         "version": "v3.3.5",
         "version_normalized": "3.3.5.0",
@@ -1145,7 +1092,7 @@
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/DarkCs/yii2-infinite-scroll/zipball/15bedc2ecb630532a97b76f5032dccae790a68ff",
+            "url": "https://api.github.com/repos/DarkCs/yii2-infinite-scroll/zipball/42e761c0e2fe474e900ef52998133e3f402f8524",
             "reference": "15bedc2ecb630532a97b76f5032dccae790a68ff",
             "shasum": ""
         },
@@ -1178,6 +1125,59 @@
             "infinite",
             "pager",
             "scroll",
+            "yii2"
+        ]
+    },
+    {
+        "name": "kop/yii2-scroll-pager",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/kop/yii2-scroll-pager.git",
+            "reference": "9e2f1a53db8bb5f50b906a0874b21a071a6215fc"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/kop/yii2-scroll-pager/zipball/9e2f1a53db8bb5f50b906a0874b21a071a6215fc",
+            "reference": "9e2f1a53db8bb5f50b906a0874b21a071a6215fc",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.4.0",
+            "webcreate/jquery-ias": "~2.2.0",
+            "yiisoft/yii2": "*"
+        },
+        "require-dev": {
+            "codeception/codeception": "~2.0"
+        },
+        "time": "2015-08-13 19:58:46",
+        "type": "yii2-extension",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "kop\\y2sp\\": ""
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Ivan Koptiev",
+                "email": "ivan.koptiev@codex.systems",
+                "role": "Developer"
+            }
+        ],
+        "description": "Infinite AJAX scrolling for Yii2 ListView widget",
+        "homepage": "http://kop.github.io/yii2-scroll-pager/",
+        "keywords": [
+            "pager",
+            "pagination",
+            "scroll",
+            "scrolling",
+            "yii",
             "yii2"
         ]
     }

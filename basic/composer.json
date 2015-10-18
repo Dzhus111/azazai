@@ -19,7 +19,8 @@
         "yiisoft/yii2-bootstrap": "*",
         "yiisoft/yii2-swiftmailer": "*",
         "2amigos/yii2-date-time-picker-widget" : "~1.0",
-        "darkcs/yii2-infinite-scroll": "*"
+        "darkcs/yii2-infinite-scroll": "*",
+        "kop/yii2-scroll-pager": "dev-master"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",

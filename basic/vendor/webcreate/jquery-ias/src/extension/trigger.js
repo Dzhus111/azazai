@@ -149,7 +149,7 @@ IASTriggerExtension.prototype.prev = function() {
 IASTriggerExtension.prototype.defaults = {
   text: 'Load more items',
   html: '<div class="ias-trigger ias-trigger-next" style="text-align: center; cursor: pointer;"><a>{text}</a></div>',
-  textPrev: 'Load previous items',
+  textPrev: 'Показать предыдущие',
   htmlPrev: '<div class="ias-trigger ias-trigger-prev" style="text-align: center; cursor: pointer;"><a>{text}</a></div>',
   offset: 0
 };
