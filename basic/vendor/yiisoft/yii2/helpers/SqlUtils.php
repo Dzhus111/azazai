@@ -20,7 +20,7 @@ class SqlUtils{
                 FULLTEXT search (search_text),
                 INDEX evn_idx (status, meeting_date)
 
-                )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
+                ) DEFAULT CHARACTER SET=utf8";
          $command_1 = $db->createCommand($sql_1)->execute();
          $command_2 = $db->createCommand($sql_2)->execute();  
             
@@ -107,7 +107,26 @@ class SqlUtils{
          $command_1 = $db->createCommand($sql_1)->execute();
          $command_2 = $db->createCommand($sql_2)->execute();  
     }
-    
+
+    public static function createFlyingDogUrlReportTable(){
+        $db= Yii::$app->db;
+        $sql_1 = "DROP TABLE IF EXISTS `flyingdogreport`";
+        $sql_2 ="CREATE TABLE IF NOT EXISTS flyingdogreport(
+                id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                `query_name` TEXT,
+                `query_artistname` TEXT,
+                `query_duration` INT,
+                `url` TEXT,
+                `time` BIGINT,
+                `vk_name` TEXT,
+                `vk_artistname` TEXT,
+                `vk_duration` INT,
+                `message` TEXT
+                ) DEFAULT CHARACTER SET=utf8";
+        $command_1 = $db->createCommand($sql_1)->execute();
+        $command_2 = $db->createCommand($sql_2)->execute();
+    }
+
     public static function regenerateDb(){
         self::createEventsTable();
         self::createCommentsTable();
@@ -115,6 +134,7 @@ class SqlUtils{
         self::createTagsTable();
         self::createTagsEventsTable();
         self::createUsersTable();
+        self::createFlyingDogUrlReportTable();
         return true;
     }
 }

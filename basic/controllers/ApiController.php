@@ -511,7 +511,11 @@ class ApiController extends Controller
         $offset = $queryParams['offset'];
         $timeOut = null;
         $query = null;
-        $seqrchQuery = $queryParams['query'];
+        $seqrchQuery = null;
+        if (isset($queryParams['query'])) {
+			$seqrchQuery = $queryParams['query'];
+		}
+        
         if(isset($queryParams['timeOut'])){
             $timeOut = $queryParams['timeOut'];
         }
@@ -675,6 +679,14 @@ class ApiController extends Controller
             exit;
             }
         
+    }
+
+    public function actionReportWrongUrl() {
+        $query = Yii::$app->request->queryParams;
+        $db= Yii::$app->db;
+        $db->createCommand()->insert("flyingdogreport", $query);
+        header('Content-Type: application/json; charset=utf-8');
+        echo "{success: true}";
     }
 
     /**
