@@ -36,6 +36,7 @@ $config = [
                 'api/getEventsList' => 'api/get-events-list',
                 'api/cancelEvent' => 'api/cancel-event',
                 'api/createEvent' => 'api/create-event',
+                'api/reportWrongUrl' => 'api/report-wrong-url',
                 'list/myEvents' => 'list/my-events',
                 'tags/' => 'tags/index',
                 '<controller:\w+>/<id:\d+>' => '<controller>/view',
