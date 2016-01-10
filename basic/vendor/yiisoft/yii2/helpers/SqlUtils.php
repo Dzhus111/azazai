@@ -17,10 +17,11 @@ class SqlUtils{
                 search_text text,
                 status tinyint(1),
                 user_id int,
+                event_type VARCHAR (255),
                 FULLTEXT search (search_text),
                 INDEX evn_idx (status, meeting_date)
 
-                ) DEFAULT CHARACTER SET=utf8";
+                ) DEFAULT CHARACTER SET=utf8 ENGINE = InnoDB";
          $command_1 = $db->createCommand($sql_1)->execute();
          $command_2 = $db->createCommand($sql_2)->execute();  
             
@@ -108,6 +109,20 @@ class SqlUtils{
          $command_2 = $db->createCommand($sql_2)->execute();  
     }
 
+    public static function createRequestsTable(){
+        $db= Yii::$app->db;
+        $sql_1 = "DROP TABLE IF EXISTS `requests`";
+        $sql_2 ="CREATE TABLE IF NOT EXISTS requests(
+                id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                event_id INT,
+                user_id INT,
+                status varchar(255),
+                INDEX request_event_id (event_id)
+                )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
+        $command_1 = $db->createCommand($sql_1)->execute();
+        $command_2 = $db->createCommand($sql_2)->execute();
+    }
+
     public static function createFlyingDogUrlReportTable(){
         $db= Yii::$app->db;
         $sql_1 = "DROP TABLE IF EXISTS `flyingdogreport`";
@@ -134,7 +149,8 @@ class SqlUtils{
         self::createTagsTable();
         self::createTagsEventsTable();
         self::createUsersTable();
-        self::createFlyingDogUrlReportTable();
+        self::createRequestsTable();
+        //self::createFlyingDogUrlReportTable();
         return true;
     }
 }
