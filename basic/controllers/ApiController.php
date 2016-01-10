@@ -6,6 +6,7 @@ use yii\helpers\OAuthVK;
 use yii\helpers\SqlUtils;
 use yii\helpers\Error;
 use yii\helpers\GSM;
+use yii\helpers\ArrayHelper;
 use yii\db\Query;
 use app\models\Events;
 use app\models\Users;
@@ -13,7 +14,7 @@ use app\models\Comments;
 use app\models\Tags;
 use app\models\TagsEvents;
 use app\models\Subscribers;
-use app\models\EventsModel;
+use app\models\Requests;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -21,6 +22,13 @@ use yii\filters\VerbFilter;
 
 class ApiController extends Controller
 {
+
+    const REQUEST_STATUS_PENDING = 'pending';
+    const REQUEST_STATUS_ACCEPTED = 'accepted';
+    const REQUEST_STATUS_DENIED = 'denied';
+    const EVENT_TYPE_PUBLIC = 'public';
+    const EVENT_TYPE_PRIVATE = 'private';
+
     public function behaviors()
     {
         return [
@@ -35,7 +43,7 @@ class ApiController extends Controller
     
     public function actionGetEventById(){
         $queryParams = Yii::$app->request->queryParams;
-        $this->validateEventId($queryParams['id']);
+        $this->validateEventId($queryParams);
         $id = $queryParams['id'];
         $this->isEventIdExist($id);
         $model = Events::find()->where(['event_id' => $id])->one();
@@ -132,7 +140,7 @@ class ApiController extends Controller
     public function actionGetNotification(){
         $queryParams = Yii::$app->request->queryParams;
         $ids = array();
-        if(isset($queryParams['id'])){
+        if(isset($qininueryParams['id'])){
             $ids[] = $queryParams['id'];
         }else{
             header('Content-Type: application/json; charset=utf-8');
@@ -207,7 +215,7 @@ class ApiController extends Controller
     
     public function actionIsSubscribed(){
         $queryParams = Yii::$app->request->queryParams;
-        $this->validateEventId($queryParams['id']);
+        $this->validateEventId($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
         $userId = $this->getUserIdByToken($queryParams['token']);
@@ -293,7 +301,7 @@ class ApiController extends Controller
     
     public function actionGetCommentsList(){
         $queryParams = Yii::$app->request->queryParams;
-        $this->validateEventId($queryParams['id']);
+        $this->validateEventId($queryParams);
         $this->limitAnfOffsetValidator($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
@@ -376,7 +384,7 @@ class ApiController extends Controller
     }
     public function actionAddComment(){
         $queryParams = Yii::$app->request->queryParams;
-        $this->validateEventId($queryParams['id']);
+        $this->validateEventId($queryParams);
         $this->validateComment($queryParams);
         $userId = $this->getUserIdByToken($queryParams['token']);
         $eventId = $queryParams['id'];
@@ -405,7 +413,7 @@ class ApiController extends Controller
     
     public function actionGetSubscribers(){
         $queryParams = Yii::$app->request->queryParams;
-        $this->validateEventId($queryParams['id']);
+        $this->validateEventId($queryParams);
         $this->limitAnfOffsetValidator($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
@@ -431,7 +439,7 @@ class ApiController extends Controller
     
     public function actionSubscribe(){
         $queryParams = Yii::$app->request->queryParams;
-        $this->validateEventId($queryParams['id']);
+        $this->validateEventId($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
         $userId = $this->getUserIdByToken($queryParams['token']);
@@ -448,16 +456,55 @@ class ApiController extends Controller
         $subscriber = Subscribers::find()->where("event_id = $eventId AND user_id = $userId")->one();
         if($subscriber){
             Yii::$app->db->createCommand
-            ("DELETE FROM subscribers WHERE user_id = $userId AND event_id = $eventId")->execute();
+            ("DELETE FROM subscribers WHERE user_id = {$userId} AND event_id = {$eventId}")->execute();
             $event->subscribers_count = $event->subscribers_count - 1;
             $event ->update(false);
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['success'=>true]);
-            Gsm::sendMessageThroughGSM(array($users->device_id), 
-            ['unsubscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
+
+            if($users){
+                Gsm::sendMessageThroughGSM(array($users->device_id),
+                    ['unsubscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
+            }
             exit;
         }
-        
+
+        $pendingStatus = self::REQUEST_STATUS_PENDING;
+
+        $requestOfSubscriber = Requests::find()->where("event_id = $eventId AND user_id = $userId")->one();
+
+        if($requestOfSubscriber && $requestOfSubscriber->status == self::REQUEST_STATUS_PENDING){
+            Yii::$app->db->createCommand
+            ("DELETE FROM requests WHERE user_id = {$userId} AND event_id = {$eventId} AND status = '{$pendingStatus}'")->execute();
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+            exit;
+        }
+
+        if($event->event_type == self::EVENT_TYPE_PRIVATE){
+
+            if($requestOfSubscriber){
+                $requestOfSubscriber->status =  self::REQUEST_STATUS_PENDING;
+                $requestOfSubscriber->update(false);
+            }else{
+                $requestModel= new Requests;
+                $requestModel->event_id = $eventId;
+                $requestModel->user_id = $userId;
+                $requestModel->status = self::REQUEST_STATUS_PENDING;
+                $requestModel->save();
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+
+            if($users){
+                Gsm::sendMessageThroughGSM(array($users->device_id),
+                    ['subscribeRequest' => ['eventId' => $eventId, 'userId' => $userId]]);
+            }
+            exit;
+        }
+
         $model = new Subscribers;
         $model->event_id = $eventId;
         $model->user_id = $userId;
@@ -466,14 +513,114 @@ class ApiController extends Controller
         $event ->update(false);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['success'=>true]);
-        Gsm::sendMessageThroughGSM(array($users->device_id), 
-            ['subscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
+
+        if($users){
+            Gsm::sendMessageThroughGSM(array($users->device_id),
+                ['subscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
+        }
+        exit;
+    }
+
+    public function  actionAcceptRequest(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams);
+        $userId = $this->getUserIdByToken($queryParams['token']);
+        $id = $queryParams['id'];
+        $this->isEventIdExist($id);
+        $users = Users::find()->where(['user_id' => $userId])->all();
+        $event = Events::find()->where(['event_id' => $id])->one();
+
+        $request = Requests::find()->where("event_id = $id AND user_id = $userId")->one();
+
+        if($request && $request->status == self::REQUEST_STATUS_PENDING){
+            $model = new Subscribers;
+            $model->event_id = $id;
+            $model->user_id = $userId;
+            $model->save();
+            $event->subscribers_count = $event->subscribers_count + 1;
+            $request ->status = self::REQUEST_STATUS_ACCEPTED;
+
+            $event ->update(false);
+            $request->update(false);
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+
+            if($users){
+                Gsm::sendMessageThroughGSM(array($users->device_id),
+                    ['aceptedRequest' => ['eventId' => $id]]);
+            }
+            exit;
+
+        }else{
+            $error = new Error;
+            $error->error = 'InvalidRequest';
+            $error->message = 'There are no pending request with this useId';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+
+    }
+
+    public function actionDenieRequest(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams);
+        $userId = $this->getUserIdByToken($queryParams['token']);
+        $id = $queryParams['id'];
+        $this->isEventIdExist($id);
+        $users = Users::find()->where(['user_id' => $userId])->all();
+        $request = Requests::find()->where("event_id = $id AND user_id = $userId")->one();
+
+        if($request && $request->status == self::REQUEST_STATUS_PENDING){
+            $request ->status = self::REQUEST_STATUS_DENIED;
+            $request->update(false);
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( ['success'=>true]);
+
+            if($users){
+                Gsm::sendMessageThroughGSM(array($users->device_id),
+                    ['deniedRequest' => ['eventId' => $id]]);
+            }
+            exit;
+
+        }else{
+            $error = new Error;
+            $error->error = 'InvalidRequest';
+            $error->message = 'There are no pending request with this useId';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+    }
+
+    public function actionGetRequests(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams);
+        $this->limitAnfOffsetValidator($queryParams);
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $id = $queryParams['id'];
+        $this->isEventIdExist($id);
+
+        $requests = Requests::find()
+            ->where(['event_id' => $id])->limit($limit)->offset($offset)->all();
+        $data = array();
+
+        foreach($requests as $request){
+            $data[] = array('userId' => $request->user_id, 'eventId' => $request->event_id);
+        }
+
+        $jsonData =['requests' => $data];
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( $jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK );
         exit;
     }
     
     public function actionCancelEvent(){
         $queryParams = Yii::$app->request->queryParams;
-        $this->validateEventId($queryParams['id']);
+        $this->validateEventId($queryParams);
         $id = $queryParams['id'];
         $this->isEventIdExist($id);
         $model = Events::find()->where(['event_id' => $id])->one();
@@ -616,6 +763,7 @@ class ApiController extends Controller
         $data['user_id'] = $userId;
         $data['subscribers_count'] = 1;
         $data['event_name'] = $queryParams['name'];
+        $data['event_type'] = $queryParams['type'];
         $data['description'] = $queryParams['description'];
         $data['address'] = $queryParams['address'];
         $data['meeting_date'] = (int)$queryParams['date'];
@@ -736,6 +884,14 @@ class ApiController extends Controller
             throw new NotFoundHttpException('The requested page does not exist.');
         }
     }
+
+    public function addRequest($eventId, $userId){
+
+    }
+
+    public function updateRequest($eventId, $userId, $status = self::REQUEST_STATUS_ACCEPTED){
+
+    }
     
     private function validateEventsParams($queryParams){
         $error = new Error;
@@ -783,7 +939,7 @@ class ApiController extends Controller
         }
         if(!isset($queryParams['peopleNumber']) || (empty($queryParams['peopleNumber'])&&(int)$queryParams['peopleNumber'] !== 0)){
             $error->error = 'BlankPeopleNumber';
-            $error->message = 'Event name are required';
+            $error->message = 'People number are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
@@ -845,17 +1001,31 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
+        if(!isset($queryParams['type']) || empty($queryParams['type'])){
+            $error->error = 'BlankEventType';
+            $error->message = 'Event type are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }elseif($queryParams['type'] != self::EVENT_TYPE_PRIVATE &&$queryParams['type'] != self::EVENT_TYPE_PUBLIC){
+            $error->error = 'InvalidEventType';
+            $error->message = 'Event type must be `public` or `private`';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
     }
     
-    public function validateEventId($id){
+    public function validateEventId($queryParams){
+
         $error = new Error;
-        if(!isset($id) || (empty($id)&&$id !='0' )){
+        if(!isset($queryParams['id']) || (empty($queryParams['id'])&&$queryParams['id'] !='0' )){
             $error->error = 'BlankEventId';
             $error->message = 'Event id are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
-        }elseif(!is_numeric($id)){
+        }elseif(!is_numeric($queryParams['id'])){
             $error->error = 'NotIntEventId';
             $error->message = 'Event id must be intereg';
             header('Content-Type: application/json; charset=utf-8');
@@ -887,30 +1057,29 @@ class ApiController extends Controller
     
     public function limitAnfOffsetValidator($queryParams){
         $error = new Error;
-        $limit= $queryParams['limit'];
-        $offset = $queryParams['offset'];
-        if(!isset($limit) || (empty($limit)&& $limit !='0' )){
+
+        if(!isset($queryParams['limit']) || (empty($queryParams['limit'])&& $queryParams['limit'] !='0' )){
             $error->error = 'BlankLimit';
             $error->message = 'Limit are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
         }
-        elseif(!is_numeric($limit)){
+        elseif(!is_numeric($queryParams['limit'])){
             $error->error = 'NotIntLimit';
             $error->message = 'Limit must be integer';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
         }
-        if(!isset($offset) || (empty($offset)&& $offset !=0 )){
+        if(!isset($queryParams['offset']) || (empty($queryParams['offset'])&& $queryParams['offset'] !=0 )){
             $error->error = 'BlankOffset';
             $error->message = 'Offset are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
         }
-        elseif(!is_numeric($offset)){
+        elseif(!is_numeric($queryParams['offset'])){
             $error->error = 'NotIntOffset';
             $error->message = 'Offset must be integer';
             header('Content-Type: application/json; charset=utf-8');

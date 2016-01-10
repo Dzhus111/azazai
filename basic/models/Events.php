@@ -18,6 +18,7 @@ use Yii;
  * @property integer $meeting_date
  * @property string $search_text
  * @property integer $user_id
+ * @property integer $event_type
  */
 class Events extends \yii\db\ActiveRecord
 {
@@ -35,7 +36,7 @@ class Events extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['event_name', 'address', 'status','description', 'subscribers_count', 'required_people_number', 'created_date', 'meeting_date', 'user_id'], 'required'],
+            [['event_name', 'address', 'status','description', 'subscribers_count', 'required_people_number', 'created_date', 'meeting_date', 'user_id', 'event_type'], 'required'],
             [['description', 'search_text'], 'string'],
             [['required_people_number', 'created_date', 'user_id', 'status'], 'integer'],
             [['event_name'], 'string', 'max' => 255]
