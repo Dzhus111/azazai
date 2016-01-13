@@ -218,17 +218,26 @@ class ApiController extends Controller
         $this->validateEventId($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
-        $userId = $this->getUserIdByToken($queryParams['token']);
-        $subscriber = Subscribers::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
-        if($subscriber){
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['isSubscribed'=>true], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
-            exit;
+        $userId = $this->getUserIdFromReques($queryParams);
+        $response = false;
+        $request = Requests::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
+        if($request){
+            if($request->status === self::REQUEST_STATUS_ACCEPTED){
+                $response = true;
+            }else{
+                $response = $request->status;
+            }
         }else{
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['isSubscribed'=>false], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
-            exit;
+            $subscriber = Subscribers::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
+
+            if($subscriber){
+                $response = true;
+            }
         }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( ['isSubscribed'=>$response], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
+        exit;
     }
     
     public function actionGetEventsByTag(){
@@ -453,29 +462,28 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        $subscriber = Subscribers::find()->where("event_id = $eventId AND user_id = $userId")->one();
-        if($subscriber){
-            Yii::$app->db->createCommand
-            ("DELETE FROM subscribers WHERE user_id = {$userId} AND event_id = {$eventId}")->execute();
-            $event->subscribers_count = $event->subscribers_count - 1;
-            $event ->update(false);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode( ['success'=>true]);
-
-            if($users){
-                Gsm::sendMessageThroughGSM(array($users->device_id),
-                    ['unsubscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
-            }
-            exit;
-        }
 
         $pendingStatus = self::REQUEST_STATUS_PENDING;
-
+        $subscriber = Subscribers::find()->where("event_id = $eventId AND user_id = $userId")->one();
         $requestOfSubscriber = Requests::find()->where("event_id = $eventId AND user_id = $userId")->one();
 
-        if($requestOfSubscriber && $requestOfSubscriber->status == self::REQUEST_STATUS_PENDING){
-            Yii::$app->db->createCommand
-            ("DELETE FROM requests WHERE user_id = {$userId} AND event_id = {$eventId} AND status = '{$pendingStatus}'")->execute();
+        if($subscriber || $requestOfSubscriber){
+            if($subscriber){
+                Yii::$app->db->createCommand
+                ("DELETE FROM subscribers WHERE user_id = {$userId} AND event_id = {$eventId}")->execute();
+                $event->subscribers_count = $event->subscribers_count - 1;
+                $event ->update(false);
+
+                if($users){
+                    Gsm::sendMessageThroughGSM(array($users->device_id),
+                        ['unsubscribe' => ['eventId' => $eventId, 'userId' => $userId]]);
+                }
+            }
+
+            if($requestOfSubscriber && $requestOfSubscriber->status == $pendingStatus){
+                Yii::$app->db->createCommand
+                ("DELETE FROM requests WHERE user_id = {$userId} AND event_id = {$eventId} AND status = '{$pendingStatus}'")->execute();
+            }
 
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( ['success'=>true]);
@@ -1152,6 +1160,19 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
+    }
+
+    public function getUserIdFromReques($queryParams){
+        $error = new Error;
+        if(empty($queryParams['userId'])){
+            $error->error = 'BlankUserId';
+            $error->message = 'UserId are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+
+        return (int)$queryParams['userId'];
     }
 }
 
