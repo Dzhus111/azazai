@@ -219,11 +219,11 @@ class ApiController extends Controller
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
         $userId = $this->getUserIdFromReques($queryParams);
-        $response = false;
+        $response = 'none';
         $request = Requests::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
         if($request){
             if($request->status === self::REQUEST_STATUS_ACCEPTED){
-                $response = true;
+                $response = 'subscribed';
             }else{
                 $response = $request->status;
             }
@@ -231,7 +231,7 @@ class ApiController extends Controller
             $subscriber = Subscribers::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
 
             if($subscriber){
-                $response = true;
+                $response = 'subscribed';
             }
         }
 
