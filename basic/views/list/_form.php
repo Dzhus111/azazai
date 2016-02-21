@@ -9,11 +9,11 @@ use dosamigos\datetimepicker\DateTimePicker;
 /* @var $model app\models\Events */
 /* @var $form yii\widgets\ActiveForm */
 ?>
-<?php if($error == 'incorrectDate'): ?>
-    <div>
-        Дата встречи должна быть не реньше текущей даты
-    </div>
-<?php endif;?>
+<?php //if($error == 'incorrectDate'): ?>
+<!--    <div>-->
+<!--        Дата встречи должна быть не реньше текущей даты-->
+<!--    </div>-->
+<?php //endif;?>
 <div class="events-form">
 
     <?php $form = ActiveForm::begin(); ?>

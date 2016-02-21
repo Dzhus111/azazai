@@ -14,6 +14,7 @@ class SqlUtils{
                 subscribers_count int,
                 created_date int,
                 meeting_date int,
+                icon int,
                 search_text text,
                 status tinyint(1),
                 user_id int,
@@ -73,7 +74,7 @@ class SqlUtils{
                 tag_id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
                 tag_name varchar(255),
                 events_count int,
-                INDEX tag_name (tag_name)
+                UNIQUE KEY tag_name (tag_name)
                 )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
          $command_1 = $db->createCommand($sql_1)->execute();
          $command_2 = $db->createCommand($sql_2)->execute();  
@@ -142,6 +143,17 @@ class SqlUtils{
         $command_2 = $db->createCommand($sql_2)->execute();
     }
 
+    public static function createMediaTable(){
+        $db= Yii::$app->db;
+        $sql_1 = "DROP TABLE IF EXISTS `media`";
+        $sql_2 = "CREATE TABLE IF NOT EXISTS media(
+                mediaId INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                `tag` varchar(255)
+                )ENGINE=InnoDB DEFAULT CHARACTER SET=utf8";
+        $command_1 = $db->createCommand($sql_1)->execute();
+        $command_2 = $db->createCommand($sql_2)->execute();
+    }
+
     public static function regenerateDb(){
         self::createEventsTable();
         self::createCommentsTable();
@@ -150,6 +162,7 @@ class SqlUtils{
         self::createTagsEventsTable();
         self::createUsersTable();
         self::createRequestsTable();
+        self::createMediaTable();
         //self::createFlyingDogUrlReportTable();
         return true;
     }

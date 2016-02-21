@@ -28,6 +28,7 @@ class ApiController extends Controller
     const REQUEST_STATUS_DENIED = 'denied';
     const EVENT_TYPE_PUBLIC = 'public';
     const EVENT_TYPE_PRIVATE = 'private';
+    const DEFAULT_MEDIA_ID = 0;
 
     public function behaviors()
     {
@@ -218,7 +219,7 @@ class ApiController extends Controller
         $this->validateEventId($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
-        $userId = $this->getUserIdFromReques($queryParams);
+        $userId = (int)$queryParams['userId'];;
         $response = 'none';
         $request = Requests::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
         if($request){
@@ -317,7 +318,7 @@ class ApiController extends Controller
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $data = (new \yii\db\Query())
-                ->select(['user_id as userId', 'comment_text as text', 'date'])
+                ->select(['user_id as userId', 'comment_id as commentId',  'comment_text as text', 'date'])
                 ->from('comments')
                 ->where(['event_id' => $eventId])
                 ->limit($limit)
@@ -333,7 +334,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
         $this->validateMod($queryParams);
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $userId = (int)$queryParams['userId'];
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $time = time();
@@ -407,10 +408,10 @@ class ApiController extends Controller
         if($model->save(false)){
             $jsonData = ['userId' => $userId, 'date' => $model->date];
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode($jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK); 
+            echo json_encode($jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
             $event = Events::find()->where(['event_id' => $eventId])->one();
             $users = Users::find()->where(['user_id' => $event->user_id])->one();
-            Gsm::sendMessageThroughGSM(array($users->device_id), 
+            Gsm::sendMessageThroughGSM(array($users->device_id),
                 ['comment' => array('eventId' => intval($eventId), 'text' => $text, 'userId' => intval($userId))]);
             exit;
         }else{
@@ -620,7 +621,7 @@ class ApiController extends Controller
             $data[] = array('userId' => $request->user_id, 'eventId' => $request->event_id);
         }
 
-        $jsonData =['requests' => $data];
+        $jsonData = array('Requests' => $data);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( $jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK );
         exit;
@@ -755,6 +756,24 @@ class ApiController extends Controller
         ]);
     }
 
+    public function actionGetIcons(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->limitAnfOffsetValidator($queryParams);
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $jsonData = array();
+        $iconModel = new \app\models\Media;
+        $icons = $iconModel->getIcons($limit, $offset);
+
+        if($icons){
+            $jsonData = \yii\helpers\ArrayHelper::toArray( $icons);
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( array('Icons' => $jsonData), JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK );
+        exit;
+    }
+
     /**
      * Creates a new Events model.
      * If creation is successful, the browser will be redirected to the 'view' page.
@@ -774,12 +793,13 @@ class ApiController extends Controller
         $data['event_type'] = $queryParams['type'];
         $data['description'] = $queryParams['description'];
         $data['address'] = $queryParams['address'];
-        $data['meeting_date'] = (int)$queryParams['date'];
+        $data['icon'] = (!empty($queryParams['icon'])) ? (string)$queryParams['icon'] : self::DEFAULT_MEDIA_ID ;
+        $data['meeting_date'] =     (int)$queryParams['date'];
         $data['required_people_number'] = $queryParams['peopleNumber'];
         $data['created_date'] = time();
         $data['status'] = true;
         $tags = explode(",",$queryParams['tags']);
-        $searchText = $data['event_name']." ".$data['description'];
+        $searchText = $data['event_name']." ".$data['description']." ".str_replace(',',' ',$queryParams['tags']);
         foreach($tags as $tag){
             if(mb_strlen($tag, 'UTF-8')<3 || mb_strlen($tag, 'UTF-8')>20 ){
                 $error =  new Error;
@@ -835,6 +855,46 @@ class ApiController extends Controller
             exit;
             }
         
+    }
+
+    public function actionEditEvent(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventsParams($queryParams);
+
+        $userId = $this->getUserIdByToken($queryParams['token']);
+        $this->validateEventId($queryParams);
+
+        $eventId = (int)$queryParams['id'];
+
+        if($this->isEventIdExist($eventId)){
+            $event = Events::find()->where(['event_id'=>$eventId])->one();
+            $event->event_name = $queryParams['name'];
+            $event->event_type = $queryParams['type'];
+            $event->description = $queryParams['description'];
+            $event->address = $queryParams['address'];
+            $event->icon = (!empty($queryParams['icon'])) ? (string)$queryParams['icon'] : self::DEFAULT_MEDIA_ID ;
+            $event->meeting_date = (int)$queryParams['date'];
+            $event->required_people_number = $queryParams['peopleNumber'];
+            $tags = explode(",",$queryParams['tags']);
+            $searchText = $queryParams['name']." ".$queryParams['description']." ".str_replace(',',' ',$queryParams['tags']);
+            $event->search_text = $searchText;
+            $existTags = Tags::find()->where(['tag_name'=>$tags])->all();
+
+            if(!empty($existTags)){
+                $tagIds = array();
+                foreach ($existTags as $existTag){
+                    $tagIds[] = $existTag->tag_id;
+                }
+
+                $assignedTags = TagsEvents::find()->where(['event_id' => $eventId, 'tag_id' => $tagIds])->all();
+
+
+                $assignedTags = \yii\helpers\ArrayHelper::toArray($assignedTags);
+            }
+                $event->update(false);
+        }
+
+
     }
 
     public function actionReportWrongUrl() {
@@ -901,7 +961,7 @@ class ApiController extends Controller
 
     }
     
-    private function validateEventsParams($queryParams){
+    private function validateEventsParams($queryParams, $additionalFields = array()){
         $error = new Error;
         if(!isset($queryParams['name']) || empty($queryParams['name'])){
             $error->error = 'BlankName';
@@ -984,9 +1044,10 @@ class ApiController extends Controller
                                     
             $error->error = 'InvalidDate';
             $error->message = 'Event date must be bigger than current date';
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
-            header('Content-Type: application/json; charset=utf-8');
+
         }
         if(!isset($queryParams['tags']) || empty($queryParams['tags'])){
             $error->error = 'BlankTags';
@@ -1021,6 +1082,17 @@ class ApiController extends Controller
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
+        }
+        if(!empty($additionalFields)){
+            foreach($additionalFields as $field){
+                if(!isset($queryParams[$field])){
+                    $error->error = 'Blank'.$field;
+                    $error->message = $field.' are required';
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode( $error);
+                    exit;
+                }
+            }
         }
     }
     
