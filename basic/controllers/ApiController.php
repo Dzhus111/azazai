@@ -219,7 +219,7 @@ class ApiController extends Controller
         $this->validateEventId($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
-        $userId = (int)$queryParams['userId'];;
+        $userId = $this->getUserIdFromReques($queryParams);
         $response = 'none';
         $request = Requests::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
         if($request){
@@ -290,6 +290,7 @@ class ApiController extends Controller
                 echo json_encode( ['Events'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
                 exit; 
     }
+
     public function actionGetTags(){
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
@@ -334,7 +335,7 @@ class ApiController extends Controller
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
         $this->validateMod($queryParams);
-        $userId = (int)$queryParams['userId'];
+        $userId = $this->getUserIdFromReques($queryParams);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
         $time = time();
