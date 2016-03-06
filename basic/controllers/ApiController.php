@@ -276,7 +276,7 @@ class ApiController extends Controller
         }
         
         $data = (new \yii\db\Query())
-                ->select(['event_id as id', 'event_name as name', 'subscribers_count as subscribersCount',
+                ->select(['event_id as id', 'icon', 'event_name as name', 'subscribers_count as subscribersCount',
                  'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
                  'meeting_date as date'])
                 ->from('events')
@@ -361,7 +361,7 @@ class ApiController extends Controller
         
         if($mod == 'created'){
             $data = (new \yii\db\Query())
-                ->select(['event_id as id', 'event_name as name', 'subscribers_count as subscribersCount',
+                ->select(['event_id as id', 'icon', 'event_name as name', 'subscribers_count as subscribersCount',
                  'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
                  'meeting_date as date'])
                 ->from('events')
@@ -377,7 +377,7 @@ class ApiController extends Controller
                 exit; 
         }elseif($mod == 'subscribed'){
             $data = (new \yii\db\Query())
-                ->select(['events.event_id as id', 'events.event_name as name', 'events.subscribers_count as subscribersCount',
+                ->select(['events.event_id as id', 'events.icon', 'events.event_name as name', 'events.subscribers_count as subscribersCount',
                  'events.description', 'events.user_id as userId', 'events.address', 'events.required_people_number as peopleNumber', 
                  'events.meeting_date as date'])
                 ->from('events')
@@ -678,7 +678,7 @@ class ApiController extends Controller
         }
         $time = time();
         
-        $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
+        $query = "SELECT event_id as id, icon, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
         if($timeOut === 'true'){
@@ -686,17 +686,17 @@ class ApiController extends Controller
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DESC LIMIT $offset, $limit";
         }
-        if($queryParams['query']){
+        if(isset($queryParams['query'])){
             if(!empty($queryParams['query'])&&$seqrchQuery != '0'){
                 $comma = strpos($seqrchQuery, ',');
                 if($comma){
                     $seqrchQuery = str_replace(',', ' ', $seqrchQuery);
                 }
-                $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
+                $query = "SELECT event_id as id, icon, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE MATCH(search_text) AGAINST ('$seqrchQuery') AND status = 1 AND meeting_date > $time ORDER BY date DESC LIMIT $offset, $limit";
             }else{
-                 $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
+                 $query = "SELECT event_id as id, icon, event_name as name, subscribers_count as subscribersCount,
                  description, user_id as userId, address, required_people_number as peopleNumber, 
                  meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
             }
