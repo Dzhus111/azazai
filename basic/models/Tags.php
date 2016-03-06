@@ -45,5 +45,10 @@ class Tags extends \yii\db\ActiveRecord
             'events_count' => 'Events Count',
         ];
     }
+
+    public function getTagsevents()
+    {
+        return $this->hasOne(TagsEvents::className(), ['tag_id' => 'tag_id']);
+    }
     
 }
