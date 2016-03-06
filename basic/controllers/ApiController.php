@@ -860,41 +860,146 @@ class ApiController extends Controller
 
     public function actionEditEvent(){
         $queryParams = Yii::$app->request->queryParams;
-        $this->validateEventsParams($queryParams);
-
+        $this->verifyParams($queryParams);
         $userId = $this->getUserIdByToken($queryParams['token']);
         $this->validateEventId($queryParams);
-
         $eventId = (int)$queryParams['id'];
+        $event = $this->getEventById($eventId);
+        $updateSearch = false;
 
-        if($this->isEventIdExist($eventId)){
-            $event = Events::find()->where(['event_id'=>$eventId])->one();
-            $event->event_name = $queryParams['name'];
-            $event->event_type = $queryParams['type'];
-            $event->description = $queryParams['description'];
-            $event->address = $queryParams['address'];
-            $event->icon = (!empty($queryParams['icon'])) ? (string)$queryParams['icon'] : self::DEFAULT_MEDIA_ID ;
-            $event->meeting_date = (int)$queryParams['date'];
-            $event->required_people_number = $queryParams['peopleNumber'];
-            $tags = explode(",",$queryParams['tags']);
-            $searchText = $queryParams['name']." ".$queryParams['description']." ".str_replace(',',' ',$queryParams['tags']);
-            $event->search_text = $searchText;
-            $existTags = Tags::find()->where(['tag_name'=>$tags])->all();
+        if($event){
+            if(isset($queryParams['name'])){
+                $event->event_name = $queryParams['name'];
+                $updateSearch = true;
+            }
 
-            if(!empty($existTags)){
-                $tagIds = array();
-                foreach ($existTags as $existTag){
-                    $tagIds[] = $existTag->tag_id;
+            if(isset($queryParams['description'])){
+                $event->description = $queryParams['description'];
+                $updateSearch = true;
+            }
+
+            if(isset($queryParams['icon'])){
+                $event->icon = $queryParams['icon'];
+            }
+
+            if(isset($queryParams['address'])){
+                $event->address = $queryParams['address'];
+            }
+
+            if(isset($queryParams['type'])){
+                $event->event_type = $queryParams['type'];
+            }
+
+            if(isset($queryParams['peopleNumber'])){
+                $event->required_people_number = $queryParams['peopleNumber'];
+            }
+
+            if(isset($queryParams['date'])){
+                $event->meeting_date = $queryParams['date'];
+            }
+
+            if(isset($queryParams['tags'])){
+                $updateSearch = true;
+                $tags = explode(",",$queryParams['tags']);
+                $existTags = Tags::find()->where(['tag_name'=>$tags])->all();
+                if(!empty($existTags)){
+                    $existsTagIds = array();
+                    $existsTagNames = array();
+
+
+                    foreach ($existTags as $existTag){
+                        $existsTagNames[] = $existTag->tag_name;
+                        $existsTagIds[] = $existTag->tag_id;
+                    }
+
+                    $assignedTags = TagsEvents::find()->where(['event_id' => $eventId])->all();
+
+                    $_assignedTags = array();
+
+                    foreach($assignedTags as $_tag){
+                        $_assignedTags[] = $_tag->tag_id;
+                    }
+
+                    $excessTags = array_diff($_assignedTags, $existsTagIds);
+                    $needToAssign = array_diff($existsTagIds, $_assignedTags);
+
+                    if(!empty($excessTags)){
+                        Tags::updateAllCounters(['events_count' => -1], ['tag_id' => $excessTags]);
+                        TagsEvents::deleteAll('tag_id IN (' . implode(',', $excessTags). ') AND event_id = '.$eventId);
+                    }
+
+                    if(!empty($needToAssign)){
+                        Tags::updateAllCounters(['events_count' => 1], ['tag_id' => $needToAssign]);
+
+                        foreach($needToAssign as $addedTag){
+                            $_tagsEvents = new TagsEvents;
+                            $_tagsEvents->tag_id = $addedTag;
+                            $_tagsEvents->event_id = $event->event_id;
+                            $_tagsEvents->save(false);
+                        }
+
+                    }
+
+                    $notExistsTagsNames = array_diff($tags, $existsTagNames);
+
+                    if(!empty($notExistsTagsNames)){
+                        foreach($notExistsTagsNames as $newTag){
+                            $tagsEvents = new TagsEvents;
+                            $tagsModel = new Tags();
+                            $tagsModel->tag_name = $newTag;
+                            $tagsModel->events_count = 1;
+                            $tagsModel->save(false);
+                            $tagsEvents->tag_id = $tagsModel->tag_id;
+                            $tagsEvents->event_id = $event->event_id;
+                            $tagsEvents->save(false);
+                        }
+                    }
+
+                }else{
+                    $assignedTags = TagsEvents::find()->where(['event_id' => $eventId])->all();
+
+                    $_assignedTags = array();
+
+                    foreach($assignedTags as $_tag){
+                        $_assignedTags[] = $_tag->tag_id;
+                    }
+
+                    if(!empty($_assignedTags)){
+                        Tags::updateAllCounters(['events_count' => -1], ['tag_id' => $_assignedTags]);
+
+                        TagsEvents::deleteAll('tag_id IN (' . implode(',', $_assignedTags). ') AND event_id = '.$eventId);
+                    }
+
+                    foreach($tags as $newTag){
+                        $tagsEvents = new TagsEvents;
+                        $tagsModel = new Tags();
+                        $tagsModel->tag_name = $newTag;
+                        $tagsModel->events_count = 1;
+                        $tagsModel->save(false);
+                        $tagsEvents->tag_id = $tagsModel->tag_id;
+                        $tagsEvents->event_id = $event->event_id;
+                        $tagsEvents->save(false);
+                    }
+                }
+            }
+
+
+            if($updateSearch){
+                $eventTags = Tags::find()->joinWith('tagsevents')
+                    ->where(['tags_events.event_id' =>$eventId])
+                    ->all();
+                $tagsData = array();
+
+                foreach($eventTags as $eventTag){
+                    $tagsData[] = $eventTag->tag_name;
                 }
 
-                $assignedTags = TagsEvents::find()->where(['event_id' => $eventId, 'tag_id' => $tagIds])->all();
-
-
-                $assignedTags = \yii\helpers\ArrayHelper::toArray($assignedTags);
+                $searchText = $event->event_name . " " . $event->description . " " . implode(' ', $tagsData);
+                $event->search_text = $searchText;
             }
-                $event->update(false);
-        }
 
+            $event->update(false);
+        }
 
     }
 
@@ -1222,7 +1327,7 @@ class ApiController extends Controller
     }
     
     public function isEventIdExist($eventId){
-        $event = 1; 
+        $event = Events::find()->where(['event_id' => $eventId])->one();
         if($event){
             return true;
         }else{
@@ -1246,6 +1351,114 @@ class ApiController extends Controller
         }
 
         return (int)$queryParams['userId'];
+    }
+
+    private function getEventById($eventId){
+        $event = Events::find()->where(['event_id' => $eventId])->one();
+        if($event){
+            return $event;
+        }else{
+            $error = new Error;
+            $error->error = 'InvalidEventId';
+            $error->message = 'There are no event with this id';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+    }
+
+    private function verifyParams($queryParams){
+        $error = new Error;
+
+        if(isset($queryParams['name'])){
+            if(mb_strlen($queryParams['name'], 'UTF-8')<5 || mb_strlen($queryParams['name'], 'UTF-8')>50 ){
+                $error->error = 'OutOfRangeError';
+                $error->message = 'Event name must contain min 5 characters and max 50 characters';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+
+        if(isset($queryParams['description'])){
+            if(mb_strlen($queryParams['description'], 'UTF-8')<5 || mb_strlen($queryParams['description'], 'UTF-8')>500){
+                $error->error = 'OutOfRangeError';
+                $error->message = 'Event description must contain min 5 characters and max 500 characters';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+
+        if(isset($queryParams['address'])){
+            if(mb_strlen($queryParams['address'], 'UTF-8')<5 || mb_strlen($queryParams['address'], 'UTF-8')>200){
+                $error->error = 'OutOfRangeError';
+                $error->message = 'Event address must contain min 5 characters and max 200 characters';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+
+        if(isset($queryParams['peopleNumber'])){
+            if(!is_numeric($queryParams['peopleNumber'])){
+                $error->error = 'NotIntPeopleNumber';
+                $error->message = 'People number must be integer';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            } elseif((int)($queryParams['peopleNumber']) === 0 || $queryParams['peopleNumber'] == 1){
+                $error->error = 'InvalidPeopleNumber';
+                $error->message = "People number should be 2 or bigger";
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+
+        if(isset($queryParams['date'])){
+            if(!is_numeric($queryParams['date'])){
+                $error->error = 'NotIntDate';
+                $error->message = 'Event date must be integer';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            } elseif((int)$queryParams['date']<=time()){
+                $error->error = 'InvalidDate';
+                $error->message = 'Event date must be bigger than current date';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+
+        if(isset($queryParams['tags'])){
+            if(!preg_match('/^[\p{L}0-9,]+$/u',$queryParams['tags'])){
+                $error->error = 'InvalidTags';
+                $error->message = 'Event tags must contain just letters and numbers';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
+
+        if(!isset($queryParams['token']) || empty($queryParams['token'])){
+            $error->error = 'BlankToken';
+            $error->message = 'Token  are required';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+
+        if(isset($queryParams['type'])){
+            if($queryParams['type'] != self::EVENT_TYPE_PRIVATE &&$queryParams['type'] != self::EVENT_TYPE_PUBLIC){
+                $error->error = 'InvalidEventType';
+                $error->message = 'Event type must be `public` or `private`';
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode( $error);
+                exit;
+            }
+        }
     }
 }
 
