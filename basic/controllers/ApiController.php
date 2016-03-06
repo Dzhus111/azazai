@@ -1125,7 +1125,7 @@ class ApiController extends Controller
             echo json_encode( $error);
             exit;
         }
-        elseif((int)($queryParams['peopleNumber']) === 0 || $queryParams['peopleNumber'] == 1){
+        elseif(((int)$queryParams['peopleNumber'] > 0 && (int)$queryParams['peopleNumber'] < 2 )  || ((int)$queryParams['peopleNumber'] < 0 && (int)$queryParams['peopleNumber'] !== -1) || (int)$queryParams['peopleNumber'] === 0){
             $error->error = 'InvalidPeopleNumber';
             $error->message = "People number should be 2 or bigger";
             header('Content-Type: application/json; charset=utf-8');
@@ -1401,13 +1401,14 @@ class ApiController extends Controller
         }
 
         if(isset($queryParams['peopleNumber'])){
-            if(!is_numeric($queryParams['peopleNumber'])){
+            $peopleNumber = (int)$queryParams['peopleNumber'];
+            if(!is_numeric($peopleNumber)){
                 $error->error = 'NotIntPeopleNumber';
                 $error->message = 'People number must be integer';
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode( $error);
                 exit;
-            } elseif((int)($queryParams['peopleNumber']) === 0 || $queryParams['peopleNumber'] == 1){
+            } elseif(($peopleNumber > 0 && $peopleNumber < 2 )  || ($peopleNumber < 0 && $peopleNumber !== -1) || $peopleNumber ===0){
                 $error->error = 'InvalidPeopleNumber';
                 $error->message = "People number should be 2 or bigger";
                 header('Content-Type: application/json; charset=utf-8');
