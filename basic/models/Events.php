@@ -23,6 +23,10 @@ use Yii;
  */
 class Events extends \yii\db\ActiveRecord
 {
+    const EVENT_STATUS_ENABLED = 1;
+    const EVENT_STATUS_DISABLED = 0;
+    const EVENT_TYPE_PUBLIC = 'public';
+    const EVENT_TYPE_PRIVATE = 'private';
     /**
      * @inheritdoc
      */
@@ -63,5 +67,31 @@ class Events extends \yii\db\ActiveRecord
             'search_text' => 'Search Text',
             'user_id' => 'User ID',
         ];
+    }
+
+    /**
+     * @return  array
+     */
+    public function getUserEvents($userId){
+        $ids = array();
+        $events = self::findAll(['user_id' => $userId]);
+        return $events;
+    }
+
+    public function getAllRequestsForEventsCreator($userId, $limit, $offset){
+        return self::find()
+            ->joinWith(['eventsrequests' => function ($query) {
+                $query->select('user_id as userId');
+            }], true, 'RIGHT JOIN')
+            ->where(['events.user_id' => $userId])
+            ->andWhere(['events.status' => self::EVENT_STATUS_ENABLED])
+            ->limit($limit)
+            ->offset($offset)
+            ->all();
+    }
+
+    public function getEventsrequests()
+    {
+        return $this->hasOne(Requests::className(), ['event_id' => 'event_id']);
     }
 }

@@ -7,7 +7,7 @@ $config = [
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
     'aliases' => [
-        '@images' => dirname(__DIR__).'\images',
+        '@images' => dirname(__DIR__).'/events.net/icon',
     ],
     'components' => [
 
@@ -39,9 +39,13 @@ $config = [
                 'api/editEvent' => 'api/edit-event',
                 'api/reportWrongUrl' => 'api/report-wrong-url',
                 'api/acceptRequest' => 'api/accept-request',
-                'api/denieRequest' => 'api/denie-request',
+                'api/denyRequest' => 'api/deny-request',
                 'api/getRequests' => 'api/get-requests',
                 'api/getIcons' => 'api/get-icons',
+                'api/getAllRequests' => 'api/get-all-requests',
+                'api/deleteComment' => 'api/delete-comment',
+                'api/updateComment' => 'api/update-comment',
+                'api/getRequestsCount' => 'api/get-requests-count',
                 'list/myEvents' => 'list/my-events',
                 'tags' => 'tags/index',
                 '<controller:\w+>/<id:\d+>' => '<controller>/view',

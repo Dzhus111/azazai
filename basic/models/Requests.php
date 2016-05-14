@@ -46,5 +46,19 @@ class Requests extends \yii\db\ActiveRecord
             'user_id' => 'User ID',
         ];
     }
+
+    public function getAllRequestsForEventsCreator($userId, $limit, $offset){
+        return self::find()
+            ->joinWith('eventsrequests', true)
+            ->where(['events.user_id' => $userId])
+            ->limit($limit)
+            ->offset($offset)
+            ->all();
+    }
+
+    public function getEventsrequests()
+    {
+        return $this->hasOne(Events::className(), ['event_id' => 'event_id']);
+    }
 }
 

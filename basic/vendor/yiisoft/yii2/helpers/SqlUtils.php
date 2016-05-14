@@ -2,6 +2,9 @@
 namespace yii\helpers;
 use Yii;
 class SqlUtils{
+
+    const SORT_ORDER_ASC = 'ASC';
+    const SORT_ORDER_DESC = 'DESC';
     public static function createEventsTable(){
         $db= Yii::$app->db;
         $sql_1 = "DROP TABLE IF EXISTS `events`";

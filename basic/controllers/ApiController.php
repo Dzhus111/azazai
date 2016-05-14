@@ -6,6 +6,8 @@ use yii\helpers\OAuthVK;
 use yii\helpers\SqlUtils;
 use yii\helpers\Error;
 use yii\helpers\GSM;
+use app\helpers\DataValidator;
+use app\helpers\Data;
 use yii\helpers\ArrayHelper;
 use yii\db\Query;
 use app\models\Events;
@@ -26,8 +28,6 @@ class ApiController extends Controller
     const REQUEST_STATUS_PENDING = 'pending';
     const REQUEST_STATUS_ACCEPTED = 'accepted';
     const REQUEST_STATUS_DENIED = 'denied';
-    const EVENT_TYPE_PUBLIC = 'public';
-    const EVENT_TYPE_PRIVATE = 'private';
     const DEFAULT_MEDIA_ID = 0;
 
     public function behaviors()
@@ -57,6 +57,7 @@ class ApiController extends Controller
                         'address' => $model->address,
                         'peopleNumber' => $model->required_people_number,
                         'date' => $model->meeting_date,
+                        'isPrivate' => ($model->event_type == Events::EVENT_TYPE_PRIVATE) ? 1 : 0
                      ];
         
         header('Content-Type: application/json; charset=utf-8');
@@ -66,7 +67,7 @@ class ApiController extends Controller
     
     public function actionRegisterDevice(){
         $queryParams = Yii::$app->request->queryParams;
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $userId = $this->getUserIdByToken($queryParams);
         $deviceId = '';
         $newDeviceId = '';
         if(isset($queryParams['deviceId']) && !empty($queryParams['deviceId'])){
@@ -277,8 +278,8 @@ class ApiController extends Controller
         
         $data = (new \yii\db\Query())
                 ->select(['event_id as id', 'icon', 'event_name as name', 'subscribers_count as subscribersCount',
-                 'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
-                 'meeting_date as date'])
+                    'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber',
+                    '`events`.`meeting_date` as date ', "IF(event_type = 'private' , true, false) as isPrivate"])
                 ->from('events')
                 ->where(" event_id IN (SELECT event_id FROM tags_events where tag_id = $tagId) AND status = 1")
                 ->andWhere([$compareSymbol, 'meeting_date', $time])
@@ -318,14 +319,16 @@ class ApiController extends Controller
         $this->isEventIdExist($eventId);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
+
         $data = (new \yii\db\Query())
-                ->select(['user_id as userId', 'comment_id as commentId',  'comment_text as text', 'date'])
+                ->select(['user_id as userId', 'comment_id as id', 'comment_text as text', 'date'])
                 ->from('comments')
                 ->where(['event_id' => $eventId])
                 ->limit($limit)
                 ->offset($offset)
                 ->orderBy(['date'=>SORT_DESC])
                 ->all();
+
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['Comments'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
         exit; 
@@ -348,7 +351,6 @@ class ApiController extends Controller
             
             if($timeOut === 'true'){
                 $compareSymbol = '<';
-                $sortMod = SORT_ASC;
             }else{
                 $error = new Error;
                 $error->error = 'InvalidTimeOutValue';
@@ -362,15 +364,15 @@ class ApiController extends Controller
         if($mod == 'created'){
             $data = (new \yii\db\Query())
                 ->select(['event_id as id', 'icon', 'event_name as name', 'subscribers_count as subscribersCount',
-                 'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber', 
-                 'meeting_date as date'])
+                    'description', 'user_id as userId', 'address', 'required_people_number as peopleNumber',
+                    '`events`.`meeting_date` as date', "IF(event_type = 'private' , true, false) as isPrivate"])
                 ->from('events')
                 ->where(['user_id' => $userId])
                 ->andWhere(['status' => 1])
                 ->andWhere([$compareSymbol, 'meeting_date', $time])
                 ->limit($limit)
                 ->offset($offset)
-                ->orderBy(['date'=> $sortMod])
+                ->orderBy(['events.meeting_date'=> $sortMod])
                 ->all();
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode( ['Events'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
@@ -378,8 +380,8 @@ class ApiController extends Controller
         }elseif($mod == 'subscribed'){
             $data = (new \yii\db\Query())
                 ->select(['events.event_id as id', 'events.icon', 'events.event_name as name', 'events.subscribers_count as subscribersCount',
-                 'events.description', 'events.user_id as userId', 'events.address', 'events.required_people_number as peopleNumber', 
-                 'events.meeting_date as date'])
+                 'events.description', 'events.user_id as userId', 'events.address', 'events.required_people_number as peopleNumber',
+                    '`events`.`meeting_date` as date', "IF(event_type = 'private' , true, false) as isPrivate"])
                 ->from('events')
                 ->innerJoin('subscribers', "subscribers.event_id = events.event_id AND  subscribers.user_id = $userId
                 AND events.meeting_date $compareSymbol $time and events.status = 1 and events.status = 1 and events.user_id != $userId", [])
@@ -391,13 +393,14 @@ class ApiController extends Controller
                 echo json_encode( ['Events'=>$data], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
                 exit;
         }
-         
+
     }
+
     public function actionAddComment(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams);
         $this->validateComment($queryParams);
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $userId = $this->getUserIdByToken($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
         $text = htmlentities($queryParams['text']);
@@ -407,13 +410,15 @@ class ApiController extends Controller
         $model->comment_text = $text;
         $model->date = time();
         if($model->save(false)){
-            $jsonData = ['userId' => $userId, 'date' => $model->date];
+            $jsonData = ['userId' => $userId, 'date' => $model->date, 'text' => $model->comment_text, 'id' => $model->comment_id];
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
             $event = Events::find()->where(['event_id' => $eventId])->one();
             $users = Users::find()->where(['user_id' => $event->user_id])->one();
-            Gsm::sendMessageThroughGSM(array($users->device_id),
-                ['comment' => array('eventId' => intval($eventId), 'text' => $text, 'userId' => intval($userId))]);
+            if($users){
+                Gsm::sendMessageThroughGSM(array($users->device_id),
+                    ['comment' => array('eventId' => intval($eventId), 'text' => $text, 'userId' => intval($userId))]);
+            }
             exit;
         }else{
             header('Content-Type: application/json; charset=utf-8');
@@ -421,8 +426,44 @@ class ApiController extends Controller
             exit;
         }
     }
+
+    public function actionDeleteComment()
+    {
+        $queryParams = Yii::$app->request->queryParams;
+        $userId = $this->getUserIdByToken($queryParams);
+        $commentId = (new DataValidator())->validateDataParameter($queryParams, 'commentId');
+        $comment = Comments::find()->where(['comment_id' => $commentId, 'user_id' => $userId])->one();
+        if($comment){
+            if($comment->delete()) {
+                Data::returnApiData(['success' => true]);
+            }
+            Data::returnApiData(['success' => false]);
+        }else{
+            (new Error())->showErrorMessage('CommentNotFound', 'Comment with this commentId and userId not found');
+        }
+    }
+
+    public function actionUpdateComment()
+    {
+        $queryParams = Yii::$app->request->queryParams;
+        $userId = $this->getUserIdByToken($queryParams);
+        $commentId = (new DataValidator())->validateDataParameter($queryParams, 'commentId');
+        $this->validateComment($queryParams);
+        $text = htmlentities($queryParams['text']);
+        $comment = Comments::find()->where(['comment_id' => $commentId, 'user_id' => $userId])->one();
+        if($comment){
+            $comment->comment_text = $text;
+            if($comment->save(false)){
+                Data::returnApiData(['success' => true]);
+            }
+            Data::returnApiData(['success' => false]);
+        }else{
+            (new Error())->showErrorMessage('CommentNotFound', 'Comment with this commentId and userId not found');
+        }
+    }
     
-    public function actionGetSubscribers(){
+    public function actionGetSubscribers()
+    {
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams);
         $this->limitAnfOffsetValidator($queryParams);
@@ -430,6 +471,7 @@ class ApiController extends Controller
         $this->isEventIdExist($eventId);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
+
         $data = (new \yii\db\Query())
                 ->select(['user_id as userId'])
                 ->from('subscribers')
@@ -438,14 +480,14 @@ class ApiController extends Controller
                 ->offset($offset)
                 ->all();
         $usersIds = array();
+
         foreach ($data as $value){
             $usersIds[] = $value['userId'];
         }
+
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode( ['Subscribers'=>$usersIds], JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK);
-        exit;    
-        
-        
+        exit;
     }
     
     public function actionSubscribe(){
@@ -453,7 +495,7 @@ class ApiController extends Controller
         $this->validateEventId($queryParams);
         $eventId = $queryParams['id'];
         $this->isEventIdExist($eventId);
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $userId = $this->getUserIdByToken($queryParams);
         $event = Events::find()->where(['event_id' => $eventId])->one();
         $users = Users::find()->where(['user_id' => $event->user_id])->all();
         if($event->user_id == $userId){
@@ -492,7 +534,7 @@ class ApiController extends Controller
             exit;
         }
 
-        if($event->event_type == self::EVENT_TYPE_PRIVATE){
+        if($event->event_type == Events::EVENT_TYPE_PRIVATE){
 
             if($requestOfSubscriber){
                 $requestOfSubscriber->status =  self::REQUEST_STATUS_PENDING;
@@ -534,9 +576,10 @@ class ApiController extends Controller
     public function  actionAcceptRequest(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams);
-        $userId = $this->getUserIdByToken($queryParams['token']);
         $id = $queryParams['id'];
-        $this->isEventIdExist($id);
+        $creatorId = $this->getUserIdByToken($queryParams);
+        $userId = (new DataValidator())->validateDataParameter($queryParams, 'userId');
+        $this->checkEventForCreatorId($creatorId, $id);
         $users = Users::find()->where(['user_id' => $userId])->all();
         $event = Events::find()->where(['event_id' => $id])->one();
 
@@ -573,12 +616,27 @@ class ApiController extends Controller
 
     }
 
-    public function actionDenieRequest(){
+    public function checkEventForCreatorId($creatorId, $eventId){
+        $event = Events::find()->where(['event_id' => $eventId, 'user_id' => $creatorId])->one();
+        if($event){
+            return true;
+        }else{
+            $error = new Error;
+            $error->error = 'EventNotFount';
+            $error->message = 'There are no event with this event id and this event creator id';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode( $error);
+            exit;
+        }
+    }
+
+    public function actionDenyRequest(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams);
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $creatorId = $this->getUserIdByToken($queryParams);
+        $userId = (new DataValidator())->validateDataParameter($queryParams, 'userId');
         $id = $queryParams['id'];
-        $this->isEventIdExist($id);
+        $this->checkEventForCreatorId($creatorId, $id);
         $users = Users::find()->where(['user_id' => $userId])->all();
         $request = Requests::find()->where("event_id = $id AND user_id = $userId")->one();
 
@@ -605,6 +663,50 @@ class ApiController extends Controller
         }
     }
 
+    public function actionGetAllRequests(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->limitAnfOffsetValidator($queryParams);
+        $limit= $queryParams['limit'];
+        $offset = $queryParams['offset'];
+        $userId = $this->getUserIdFromReques($queryParams);
+        $eventsModel = new Requests();
+        $requests = $eventsModel->getAllRequestsForEventsCreator($userId, $limit, $offset);
+        $data = array();
+
+        foreach($requests as $request){
+            $data[] = array(
+                'userId' => $request->user_id,
+                'event' => array(
+                    'id'                => $request->eventsrequests->event_id,
+                    'userId'            => $request->eventsrequests->user_id,
+                    'name'              => $request->eventsrequests->event_name,
+                    'icon'              => $request->eventsrequests->icon,
+                    'description'       => $request->eventsrequests->description,
+                    'peopleNumber'      => $request->eventsrequests->required_people_number,
+                    'subscribersCount'  => $request->eventsrequests->subscribers_count,
+                    'date'              => $request->eventsrequests->meeting_date,
+                    'address'           => $request->eventsrequests->address
+            ));
+        }
+
+        $jsonData = array('Requests' => $data);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( $jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK );
+        exit;
+    }
+
+    public function actionGetRequestsCount(){
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams);
+        $id = $queryParams['id'];
+
+        if($this->isEventIdExist($id)){
+            $count = Requests::find()->where(['event_id' => $id])->count();
+            Data::returnApiData(['result' => $count]);
+        };
+    }
+
+
     public function actionGetRequests(){
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventId($queryParams);
@@ -619,7 +721,7 @@ class ApiController extends Controller
         $data = array();
 
         foreach($requests as $request){
-            $data[] = array('userId' => $request->user_id, 'eventId' => $request->event_id);
+            $data[] = $request->user_id;
         }
 
         $jsonData = array('Requests' => $data);
@@ -635,6 +737,7 @@ class ApiController extends Controller
         $this->isEventIdExist($id);
         $model = Events::find()->where(['event_id' => $id])->one();
         $model->status = 0;
+
         if(TagsEvents::find()->where(['event_id' => $id])->one()){
             Yii::$app->db->createCommand
             ("UPDATE tags SET events_count = events_count - 1  WHERE tag_id IN 
@@ -660,89 +763,52 @@ class ApiController extends Controller
     }
         
     public function actionGetEventsList()
-    {   
-        $error = new Error;
+    {
         $queryParams = Yii::$app->request->queryParams;
         $this->limitAnfOffsetValidator($queryParams);
         $limit= $queryParams['limit'];
         $offset = $queryParams['offset'];
-        $timeOut = null;
-        $query = null;
-        $seqrchQuery = null;
-        if (isset($queryParams['query'])) {
-			$seqrchQuery = $queryParams['query'];
-		}
-        
-        if(isset($queryParams['timeOut'])){
-            $timeOut = $queryParams['timeOut'];
-        }
+        $timeOut = false;
         $time = time();
+        $query = null;
+        $searchQuery = null;
+        $order = SORT_ASC;
+        $dataFilter = (isset($queryParams['dateFilter'])) ? (new DataValidator())->validateDataParameter($queryParams, 'dateFilter', true) : null;
+        $data =  (new \yii\db\Query())
+            ->select(['events.event_id as id', 'events.icon', 'events.event_name as name', 'events.subscribers_count as subscribersCount',
+                'events.description', 'events.user_id as userId', 'events.address', 'events.required_people_number as peopleNumber',
+                '`events`.`meeting_date` as date ', "IF(event_type = 'private' , true, false) as isPrivate"])
+            ->from('events')
+            ->where(['status' => Events::EVENT_STATUS_ENABLED]);
         
-        $query = "SELECT event_id as id, icon, event_name as name, subscribers_count as subscribersCount,
-                 description, user_id as userId, address, required_people_number as peopleNumber, 
-                 meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
-        if($timeOut === 'true'){
-            $query = "SELECT event_id as id, event_name as name, subscribers_count as subscribersCount,
-                 description, user_id as userId, address, required_people_number as peopleNumber, 
-                 meeting_date as date FROM events WHERE status = 1 AND meeting_date < $time ORDER BY date DESC LIMIT $offset, $limit";
+        if(isset($queryParams['timeOut']) && $queryParams['timeOut']){
+            $timeOut = $queryParams['timeOut'];
+            $order = SORT_DESC;
         }
-        if(isset($queryParams['query'])){
-            if(!empty($queryParams['query'])&&$seqrchQuery != '0'){
-                $comma = strpos($seqrchQuery, ',');
-                if($comma){
-                    $seqrchQuery = str_replace(',', ' ', $seqrchQuery);
-                }
-                $query = "SELECT event_id as id, icon, event_name as name, subscribers_count as subscribersCount,
-                 description, user_id as userId, address, required_people_number as peopleNumber, 
-                 meeting_date as date FROM events WHERE MATCH(search_text) AGAINST ('$seqrchQuery') AND status = 1 AND meeting_date > $time ORDER BY date DESC LIMIT $offset, $limit";
-            }else{
-                 $query = "SELECT event_id as id, icon, event_name as name, subscribers_count as subscribersCount,
-                 description, user_id as userId, address, required_people_number as peopleNumber, 
-                 meeting_date as date FROM events WHERE status = 1 AND meeting_date > $time ORDER BY date ASC LIMIT $offset, $limit";
-            }
+
+        if(!empty($queryParams['query']) && $searchQuery != '0'){
+            $searchQuery = str_replace(',', ' ', $queryParams['query']);
+            $data->andWhere("MATCH (search_text) AGAINST ('" . $searchQuery . "' IN BOOLEAN MODE)");
         }
-        if(isset($queryParams['dateFilter'])){
-            if(empty($queryParams['dateFilter']) && $queryParams['dateFilter'] != '0'){
-                $error->error = 'BlankFilter';
-                $error->message = 'Filter fild is blank';
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( $error);
-                exit;
-            }
-            if(is_numeric($queryParams['dateFilter'])){
-                $filterDate = (int)$queryParams['dateFilter'];
-                $endOfdateFilter = $filterDate + (60*60*24);
-                $order = 'ASC';
-                
-                if($timeOut === 'true'){
-                    $order = 'DESC';
-                    $query = "SELECT event_id as id, icon, event_name as name, subscribers_count as subscribersCount,
-                 description, user_id as userId, address, required_people_number as peopleNumber, 
-                 meeting_date as date FROM events WHERE meeting_date >= $filterDate AND 
-                 meeting_date <= $time AND status = 1  ORDER BY date $order LIMIT $offset, $limit";
-                }else{
-                    $query = "SELECT event_id as id, icon, event_name as name, subscribers_count as subscribersCount,
-                    description, user_id as userId, address, required_people_number as peopleNumber, 
-                    meeting_date as date FROM events WHERE meeting_date >= $time AND 
-                    meeting_date <= $endOfdateFilter AND status = 1  ORDER BY date $order LIMIT $offset, $limit";
-                }
-            }else{
-                $error->error = 'NotIntDateFilter';
-                $error->message = 'Date filter must be integer';
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode( $error);
-                exit;
-            }
+
+        if($dataFilter && $timeOut){
+            $data ->andWhere('meeting_date >= ' . $dataFilter . ' AND meeting_date <= ' .  $time);
+        }elseif($timeOut){
+            $data ->andWhere('meeting_date < ' . $time);
+        }elseif($dataFilter){
+            $endOfDateFilter = $dataFilter + ((60*60*24));
+            $data ->andWhere('meeting_date >= ' . $time . ' AND meeting_date < ' .  $endOfDateFilter);
+        }else{
+            $data ->andWhere('meeting_date >= ' . $time);
         }
-        
-        
-        
-        
-        $data = Yii::$app->db->createCommand($query)->queryAll();
-        $jsonData =['events' => $data];
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode( $jsonData, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK );
-        exit;
+
+        $data = $data
+            ->limit($limit)
+            ->offset($offset)
+            ->orderBy(['events.meeting_date'=> $order])
+            ->all();
+        $jsonData = ['Events' => $data];
+        Data::returnApiData($jsonData);
     }
 
     /**
@@ -786,7 +852,7 @@ class ApiController extends Controller
         $data = array();
         $queryParams = Yii::$app->request->queryParams;
         $this->validateEventsParams($queryParams);
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $userId = $this->getUserIdByToken($queryParams);
         
         $data['user_id'] = $userId;
         $data['subscribers_count'] = 1;
@@ -799,10 +865,11 @@ class ApiController extends Controller
         $data['required_people_number'] = $queryParams['peopleNumber'];
         $data['created_date'] = time();
         $data['status'] = true;
-        $tags = explode(",",$queryParams['tags']);
-        $searchText = $data['event_name']." ".$data['description']." ".str_replace(',',' ',$queryParams['tags']);
+        $tagsString = strtolower($queryParams['tags']);
+        $tags = explode(",", $tagsString);
+        $searchText = $data['event_name']." ".$data['description']." ".str_replace(',', ' ', $tagsString);
         foreach($tags as $tag){
-            if(mb_strlen($tag, 'UTF-8')<3 || mb_strlen($tag, 'UTF-8')>20 ){
+            if(mb_strlen($tag, 'UTF-8') < 3 || mb_strlen($tag, 'UTF-8') > 20 ){
                 $error =  new Error;
                 $error->error = 'OutOfRangeError';
                 $error->message = 'Event tag must contain min 3 characters and max 20 characters';
@@ -861,7 +928,7 @@ class ApiController extends Controller
     public function actionEditEvent(){
         $queryParams = Yii::$app->request->queryParams;
         $this->verifyParams($queryParams);
-        $userId = $this->getUserIdByToken($queryParams['token']);
+        $userId = $this->getUserIdByToken($queryParams);
         $this->validateEventId($queryParams);
         $eventId = (int)$queryParams['id'];
         $event = $this->getEventById($eventId);
@@ -986,7 +1053,7 @@ class ApiController extends Controller
 
             if($updateSearch){
                 $eventTags = Tags::find()->joinWith('tagsevents')
-                    ->where(['tags_events.event_id' =>$eventId])
+                    ->where(['tags_events.event_id' => $eventId])
                     ->all();
                 $tagsData = array();
 
@@ -1182,7 +1249,7 @@ class ApiController extends Controller
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
-        }elseif($queryParams['type'] != self::EVENT_TYPE_PRIVATE &&$queryParams['type'] != self::EVENT_TYPE_PUBLIC){
+        }elseif($queryParams['type'] != Events::EVENT_TYPE_PRIVATE &&$queryParams['type'] != Events::EVENT_TYPE_PUBLIC){
             $error->error = 'InvalidEventType';
             $error->message = 'Event type must be `public` or `private`';
             header('Content-Type: application/json; charset=utf-8');
@@ -1220,20 +1287,20 @@ class ApiController extends Controller
         }
     }
     
-    public function getUserIdByToken($token){
+    public function getUserIdByToken($queryParams){
         $error = new Error;
-        if(!isset($token) || empty($token)){
+        if(!isset($queryParams['token']) || empty($queryParams['token'])){
             $error->error = 'BlankToken';
-            $error->message = 'Token  are required';
+            $error->message = 'token  are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
         }
-        $userId = OAuthVK::getUserIdToken($token);
+        $userId = OAuthVK::getUserIdToken($queryParams['token']);
         if(!$userId){
             $error = new Error;
             $error->error = 'InvalidToken';
-            $error->message = 'Token must be valid';
+            $error->message = 'token must be valid';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
@@ -1277,8 +1344,8 @@ class ApiController extends Controller
     public function validateComment($queryParams){
         $error = new Error;
         if(!isset($queryParams['text']) || (empty($queryParams['text'])&& $queryParams['text'] !='0')){
-            $error->error = 'BlankComment';
-            $error->message = 'Comment are required';
+            $error->error = 'BlankCommentText';
+            $error->message = 'text are required';
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode( $error);
             exit;
@@ -1452,7 +1519,7 @@ class ApiController extends Controller
         }
 
         if(isset($queryParams['type'])){
-            if($queryParams['type'] != self::EVENT_TYPE_PRIVATE &&$queryParams['type'] != self::EVENT_TYPE_PUBLIC){
+            if($queryParams['type'] != Events::EVENT_TYPE_PRIVATE &&$queryParams['type'] != Events::EVENT_TYPE_PUBLIC){
                 $error->error = 'InvalidEventType';
                 $error->message = 'Event type must be `public` or `private`';
                 header('Content-Type: application/json; charset=utf-8');

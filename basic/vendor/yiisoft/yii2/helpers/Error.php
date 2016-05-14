@@ -12,5 +12,13 @@ class Error
     public function getErrorName(){
         return $this->error;
     }
+
+    public function showErrorMessage($errorName, $errorMessage){
+        $this->error = $errorName;
+        $this->message = $errorMessage;
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($this);
+        exit;
+    }
 }
     
