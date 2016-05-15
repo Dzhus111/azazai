@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use app\models\Events;
 
 /**
  * This is the model class for table "subscribers".
@@ -14,6 +15,9 @@ use Yii;
 class Requests extends \yii\db\ActiveRecord
 {
 
+    const REQUEST_STATUS_PENDING = 'pending';
+    const REQUEST_STATUS_ACCEPTED = 'accepted';
+    const REQUEST_STATUS_DENIED = 'denied';
     public $userId;
     public $eventId;
     /**
@@ -51,6 +55,8 @@ class Requests extends \yii\db\ActiveRecord
         return self::find()
             ->joinWith('eventsrequests', true)
             ->where(['events.user_id' => $userId])
+            ->andWhere(['requests.status' => self::REQUEST_STATUS_PENDING])
+            ->andWhere(['events.status' => Events::EVENT_STATUS_ENABLED])
             ->limit($limit)
             ->offset($offset)
             ->all();

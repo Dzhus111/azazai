@@ -24,10 +24,6 @@ use yii\filters\VerbFilter;
 
 class ApiController extends Controller
 {
-
-    const REQUEST_STATUS_PENDING = 'pending';
-    const REQUEST_STATUS_ACCEPTED = 'accepted';
-    const REQUEST_STATUS_DENIED = 'denied';
     const DEFAULT_MEDIA_ID = 0;
 
     public function behaviors()
@@ -224,7 +220,7 @@ class ApiController extends Controller
         $response = 'none';
         $request = Requests::find()->where(['event_id' => $eventId, 'user_id' => $userId])->one();
         if($request){
-            if($request->status === self::REQUEST_STATUS_ACCEPTED){
+            if($request->status === Requests::REQUEST_STATUS_ACCEPTED){
                 $response = 'subscribed';
             }else{
                 $response = $request->status;
@@ -507,7 +503,7 @@ class ApiController extends Controller
             exit;
         }
 
-        $pendingStatus = self::REQUEST_STATUS_PENDING;
+        $pendingStatus = Requests::REQUEST_STATUS_PENDING;
         $subscriber = Subscribers::find()->where("event_id = $eventId AND user_id = $userId")->one();
         $requestOfSubscriber = Requests::find()->where("event_id = $eventId AND user_id = $userId")->one();
 
@@ -537,13 +533,13 @@ class ApiController extends Controller
         if($event->event_type == Events::EVENT_TYPE_PRIVATE){
 
             if($requestOfSubscriber){
-                $requestOfSubscriber->status =  self::REQUEST_STATUS_PENDING;
+                $requestOfSubscriber->status =  Requests::REQUEST_STATUS_PENDING;
                 $requestOfSubscriber->update(false);
             }else{
                 $requestModel= new Requests;
                 $requestModel->event_id = $eventId;
                 $requestModel->user_id = $userId;
-                $requestModel->status = self::REQUEST_STATUS_PENDING;
+                $requestModel->status = Requests::REQUEST_STATUS_PENDING;
                 $requestModel->save();
             }
 
@@ -585,13 +581,13 @@ class ApiController extends Controller
 
         $request = Requests::find()->where("event_id = $id AND user_id = $userId")->one();
 
-        if($request && $request->status == self::REQUEST_STATUS_PENDING){
+        if($request && $request->status == Requests::REQUEST_STATUS_PENDING){
             $model = new Subscribers;
             $model->event_id = $id;
             $model->user_id = $userId;
             $model->save();
             $event->subscribers_count = $event->subscribers_count + 1;
-            $request ->status = self::REQUEST_STATUS_ACCEPTED;
+            $request ->status = Requests::REQUEST_STATUS_ACCEPTED;
 
             $event ->update(false);
             $request->update(false);
@@ -640,8 +636,8 @@ class ApiController extends Controller
         $users = Users::find()->where(['user_id' => $userId])->all();
         $request = Requests::find()->where("event_id = $id AND user_id = $userId")->one();
 
-        if($request && $request->status == self::REQUEST_STATUS_PENDING){
-            $request ->status = self::REQUEST_STATUS_DENIED;
+        if($request && $request->status == Requests::REQUEST_STATUS_PENDING){
+            $request ->status = Requests::REQUEST_STATUS_DENIED;
             $request->update(false);
 
             header('Content-Type: application/json; charset=utf-8');
@@ -1130,7 +1126,7 @@ class ApiController extends Controller
 
     }
 
-    public function updateRequest($eventId, $userId, $status = self::REQUEST_STATUS_ACCEPTED){
+    public function updateRequest($eventId, $userId, $status = Requests::REQUEST_STATUS_ACCEPTED){
 
     }
     
