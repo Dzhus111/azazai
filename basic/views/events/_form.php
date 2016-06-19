@@ -18,17 +18,25 @@ use dosamigos\datetimepicker\DateTimePicker;
 <?php //endif;?>
 <?php $images = Media::getIconsList();?>
 <?php $imagesDirName = '/icon/';?>
-<div class="events-form">
 
+<div class="events-form">
     <?php $form = ActiveForm::begin([
         'options'   => [
             'id' => 'add-new-event-form'
     ]]); ?>
 
     <?= $form->field($model, 'event_name')->textInput(['maxlength' => true]) ?>
+    <div class="form-group field-events-event_type">
+        <label class="control-label">Общедоступный</label>
+        <input type="radio" value="public" checked="checked" name="type" class="form-control">
+        <label class="control-label">Приватный</label>
+        <input type="radio" value="private" name="type" class="form-control">
+    </div>
+
     <?= $form->field($model, 'description')->textarea(['rows' => 6]) ?>
     <?= $form->field($model, 'address')->textInput() ?>
     <?= $form->field($model, 'required_people_number')->textInput() ?>
+
     <label>Дата и время встречи</label>
     <?= DateTimePicker::widget([
     'model' => $model,
@@ -41,6 +49,7 @@ use dosamigos\datetimepicker\DateTimePicker;
         'todayBtn' => true
     ]
     ]);?>
+
     <div>
         <label>Иконка</label>
         <div>
@@ -64,7 +73,7 @@ use dosamigos\datetimepicker\DateTimePicker;
     </div>
 
     <label>Теги</label>
-    <input id="events-tags" type="text" name="tags" class="form-control" data-role="tagsinput"/>
+    <input id="events-tags" value="<?php echo (isset($tagsStr)) ? $tagsStr : ""?>" type="text" name="tags" class="form-control" data-role="tagsinput"/>
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? 'Create' : 'Update', ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
     </div>
