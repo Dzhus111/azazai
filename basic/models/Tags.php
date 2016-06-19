@@ -46,9 +46,18 @@ class Tags extends \yii\db\ActiveRecord
         ];
     }
 
-    public function getTagsevents()
+    public function getTagsEvents()
     {
         return $this->hasOne(TagsEvents::className(), ['tag_id' => 'tag_id']);
     }
-    
+
+    public function getTagsByEvent($eventId)
+    {
+        return self::find()
+            ->joinWith(['tagsEvents' => function ($query) {
+                $query->select('event_id');
+            }], true, 'RIGHT JOIN')
+            ->where(['tags_events.event_id' => $eventId])
+            ->all();
+    }
 }
