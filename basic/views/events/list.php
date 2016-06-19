@@ -6,7 +6,7 @@
     $this->registerJsFile( '/js/listing.js' );
 ?>
 <div class="create-event">
-    <a class="create-event-link" href="/list/create">Добавить событие</a>
+    <a class="create-event-link" href="/events/create">Добавить событие</a>
 </div>
 <div class="search">
     <div class="events-search">

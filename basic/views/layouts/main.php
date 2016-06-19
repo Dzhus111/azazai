@@ -37,7 +37,7 @@ AppAsset::register($this);
             echo Nav::widget([
                 'options' => ['class' => 'navbar-nav navbar-right'],
                 'items' => [
-                    ['label' => 'My Events', 'url' => ['/list/myEvents']],
+                    ['label' => 'My Events', 'url' => ['/events/my-events']],
                     ['label' => 'Tags', 'url' => ['/tags']]
                 ],
             ]);
