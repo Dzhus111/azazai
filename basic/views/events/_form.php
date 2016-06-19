@@ -3,6 +3,8 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use app\models\Tags;
+use app\helpers\Media;
+use yii\helpers\Url;
 use dosamigos\datetimepicker\DateTimePicker;
 
 /* @var $this yii\web\View */
@@ -14,9 +16,14 @@ use dosamigos\datetimepicker\DateTimePicker;
 <!--        Дата встречи должна быть не реньше текущей даты-->
 <!--    </div>-->
 <?php //endif;?>
+<?php $images = Media::getIconsList();?>
+<?php $imagesDirName = '/icon/';?>
 <div class="events-form">
 
-    <?php $form = ActiveForm::begin(); ?>
+    <?php $form = ActiveForm::begin([
+        'options'   => [
+            'id' => 'add-new-event-form'
+    ]]); ?>
 
     <?= $form->field($model, 'event_name')->textInput(['maxlength' => true]) ?>
     <?= $form->field($model, 'description')->textarea(['rows' => 6]) ?>
@@ -34,13 +41,33 @@ use dosamigos\datetimepicker\DateTimePicker;
         'todayBtn' => true
     ]
     ]);?>
-    <label>Теги</label>
-    <input id="events-tags" type="text" name="tags" class="form-control"/>
+    <div>
+        <label>Иконка</label>
+        <div>
+            <img id="selected-icon" src="/icon/0.png" width="70" height="70" alt="">
+        </div>
+        <div>
+            <span id="icon-status">
+                Поменять
+            </span>
+            <div id="icons-container" style="display: none;">
+                <ul>
+                    <?php foreach($images as $imageFileName):?>
+                        <ol class="add-new-icon" data-value="<?php echo $imageFileName?>">
+                            <img src="<?php echo $imagesDirName . $imageFileName?>" alt="" width="70" height="70">
+                        </ol>
+                    <?php endforeach;?>
+                </ul>
+            </div>
+        </div>
+        <input id="icon-input" type="hidden" name="icon" value="0"/>
+    </div>
 
+    <label>Теги</label>
+    <input id="events-tags" type="text" name="tags" class="form-control" data-role="tagsinput"/>
     <div class="form-group">
         <?= Html::submitButton($model->isNewRecord ? 'Create' : 'Update', ['class' => $model->isNewRecord ? 'btn btn-success' : 'btn btn-primary']) ?>
     </div>
-
     <?php ActiveForm::end(); ?>
 
 </div>

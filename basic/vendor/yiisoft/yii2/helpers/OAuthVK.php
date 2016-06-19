@@ -63,7 +63,7 @@ class OAuthVK {
             '?client_id=' . self::APP_ID .
             '&client_secret=' . self::APP_SECRET .
             '&code=' .$code .
-            '&redirect_uri=' . urlencode('http://events.net/list/create');
+            '&redirect_uri=' . urlencode('http://events.net/events/create');
 
 
         if (!($res = @file_get_contents($url))) {
