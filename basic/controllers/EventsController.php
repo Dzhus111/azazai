@@ -21,7 +21,8 @@ class EventsController extends Controller
 
     private $userId = null;
 
-    public function actionDetail($id){
+    public function actionDetail($id)
+    {
         $statusActive = Events::EVENT_STATUS_ENABLED;
         $time = time();
         $id = (int)$id;
@@ -47,7 +48,8 @@ class EventsController extends Controller
                 ]);
         }
 
-        if(!empty($comment)) {
+        if(!empty($comment))
+        {
 
             $commentsModel = new Comments();
             $commentsModel->user_id = $userId;
@@ -83,7 +85,8 @@ class EventsController extends Controller
         ]);
     }
 
-    public function subscribe($eventId, $userId){
+    public function subscribe($eventId, $userId)
+    {
         $event = Events::find()->where(['event_id' => $eventId])->one();
         $subscriber = Subscribers::find()->where("event_id = $eventId AND user_id = $userId")->one();
 
@@ -284,7 +287,8 @@ class EventsController extends Controller
      * @return mixed
      */
 
-    public function actionList(){
+    public function actionList()
+    {
         $statusActive = Events::EVENT_STATUS_ENABLED;
         $queryParams = Yii::$app->request->queryParams;
         $tagCondition = '';
@@ -322,7 +326,8 @@ class EventsController extends Controller
         ]);
     }
 
-    public function actionMyEvents(){
+    public function actionMyEvents()
+    {
         if(is_null( $this->getUserId())){
             $this->loginVk();
         }
