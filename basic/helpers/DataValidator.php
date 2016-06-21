@@ -9,13 +9,14 @@
 namespace app\helpers;
 use yii\base\Exception;
 use yii\helpers\Error;
+use app\models\Events;
 
 class DataValidator
 {
     public function validateDataParameter($params, $key , $isInt = false, $maxStrLen = null, $minStrLen = null){
         try {
             if (empty($params[$key])) {
-                (new Error())->showErrorMessage('blank' . ucfirst($key), $key . ' fild is blank');
+                (new Error())->showErrorMessage('blank' . ucfirst($key), $key . ' field is blank');
             }
             if($isInt){
                 if(!is_numeric($params[$key])){
