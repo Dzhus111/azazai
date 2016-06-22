@@ -41,10 +41,13 @@ class Events extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['event_name', 'address', 'status','description', 'subscribers_count', 'required_people_number', 'created_date', 'meeting_date', 'user_id', 'event_type', 'icon'], 'required'],
-            [['description', 'search_text', 'icon'], 'string'],
-            [['required_people_number', 'created_date', 'user_id', 'status'], 'integer'],
-            [['event_name'], 'string', 'max' => 255]
+            [['event_name', 'address', 'status','description', 'required_people_number', 'created_date', 'meeting_date', 'user_id', 'event_type', 'icon'], 'required'],
+            ['search_text', 'string'],
+            [['required_people_number', 'meeting_date', 'created_date', 'user_id', 'status', 'subscribers_count'], 'integer'],
+            ['event_name', 'string', 'length' => [5, 50]],
+            ['description', 'string', 'length' => [5, 500]],
+            ['address', 'string', 'length' => [5, 200]],
+            ['meeting_date', 'validateDate'],
         ];
     }
 
@@ -54,18 +57,18 @@ class Events extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'subscribers_count' => "Количество подписавшихся",
-            'event_id' => 'Event ID',
-            'icon' => 'Иконка',
-            'event_name' => 'Название',
-            'description' => 'Описание',
-            'address' => 'Место встречи (адрес)',
-            'required_people_number' => 'Необходимое количество людей',
-            'created_date' => 'Created Date',
-            'meeting_date' => 'Дата и время встречи',
-            'status' => 'Status',
-            'search_text' => 'Search Text',
-            'user_id' => 'User ID',
+            'subscribers_count'         => "Количество подписавшихся",
+            'event_id'                  => 'Event ID',
+            'icon'                      => 'Иконка',
+            'event_name'                => 'Название',
+            'description'               => 'Описание',
+            'address'                   => 'Место встречи (адрес)',
+            'required_people_number'    => 'Необходимое количество людей',
+            'created_date'              => 'Created Date',
+            'meeting_date'              => 'Дата и время встречи',
+            'status'                    => 'Status',
+            'search_text'               => 'Search Text',
+            'user_id'                   => 'User ID',
         ];
     }
 
@@ -93,5 +96,14 @@ class Events extends \yii\db\ActiveRecord
     public function getEventsrequests()
     {
         return $this->hasOne(Requests::className(), ['event_id' => 'event_id']);
+    }
+
+    public function validateDate()
+    {
+        if(!is_numeric($this->meeting_date)) {
+            $this->addError('meeting_date', 'Event date must be integer.');
+        } elseif((int)$this->meeting_date <= time()) {
+            $this->addError('meeting_date', 'Event date must be bigger than current date.');
+        }
     }
 }

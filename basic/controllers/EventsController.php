@@ -1,6 +1,9 @@
 <?php
 namespace app\controllers;
+
 use Yii;
+use app\helpers\Data;
+use app\helpers\DataValidator;
 use yii\helpers\Utils;
 use app\models\Events;
 use app\models\EventsModel;
@@ -76,6 +79,7 @@ class EventsController extends Controller
                 'pageSize' => 20,
             ],
         ]);
+
 
         return $this->render('event', [
             'model' => $model,
@@ -231,18 +235,59 @@ class EventsController extends Controller
 
         if($userId && is_numeric($id)) {
             $event = Events::findOne((int)$id);
-            $event->meeting_date = date('d-m-Y H:i', (int)$event->meeting_date);
-            $tags = (new Tags)->getTagsByEvent($id);
-            $tagsStr = '';
 
-            foreach ($tags as $tag) {
-                $tagsStr .= $tag->tag_name . ',';
+            if($event) {
+                $event->meeting_date = date('d-m-Y  H:i', (int)$event->meeting_date);
+                $tags = (new Tags)->getTagsByEvent($id);
+                $tagsStr = '';
+
+                foreach ($tags as $tag) {
+                    $tagsStr .= $tag->tag_name . ',';
+                }
+
+                return $this->render('edit_event', [
+                    'event'     => $event,
+                    'tagsStr'   => rtrim($tagsStr,','),
+                ]);
+            } else {
+                $this->redirect(['events/list']);
             }
+        }
+    }
 
-            return $this->render('edit_event', [
-                'event'     => $event,
-                'tagsStr'   => rtrim($tagsStr,',')
-            ]);
+    public function actionEditSave()
+    {
+        $params = Yii::$app->request->post();
+        $eventId = (isset($params['id']) && is_numeric($params['id'])) ? (int)$params['id'] : false;
+
+        if($eventId) {
+            $event = Events::findOne($eventId);
+
+            if($event) {
+                $eventData = $params['Events'];
+                $eventData['meeting_date'] = strtotime($eventData['meeting_date']);
+                $eventData['icon'] = $params['icon'];
+                $eventData['event_type'] = $params['type'];
+                $event->load(['Events' => $eventData]);
+
+                if($event->validate()) {
+                    (new Tags())->updateTags($params['tags'], $event);
+
+                    if($event->updateAttributes($eventData)) {
+                        $this->redirect(['events/detail', 'id' => $eventId]);
+                    }
+                }else{
+                    $errors = $event->getErrors();
+
+                    if(empty($errors)) {
+                        $firstError = array_shift($errors);
+                        Yii::$app->getSession()->setFlash('error', $firstError[0]);
+                    }
+
+                    $this->redirect(['events/edit', 'id' => $event->event_id]);
+                }
+            }
+            $this->redirect(['events/list']);
         }
     }
 
