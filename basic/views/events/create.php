@@ -22,12 +22,10 @@ $this->registerCssFile(Yii::$app->request->baseUrl . '/css/bootstrap-tagsinput.c
 
 </script>
 <div class="events-create">
-
     <h1><?= Html::encode($this->title) ?></h1>
-
     <?= $this->render('_form', [
-        'model' => $model,
-//        'error' => $error
+        'model'     => $model,
+        'action'    => '/events/create'
+//        'errors' => $errors
     ]) ?>
-
 </div>

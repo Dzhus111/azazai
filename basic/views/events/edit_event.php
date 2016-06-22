@@ -16,7 +16,9 @@ $this->registerCssFile(Yii::$app->request->baseUrl . '/css/bootstrap-tagsinput.c
     <h1><?= Html::encode($this->title) ?></h1>
     <?= $this->render('_form', [
         'model'     => $event,
-        'tagsStr'   => $tagsStr
+        'tagsStr'   => $tagsStr,
+        'action'    => '/events/editSave',
+//        'eventId'   => $event->event_id
 //        'errors' => $errors
     ]) ?>
 </div>
