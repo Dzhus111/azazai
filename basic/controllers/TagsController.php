@@ -24,7 +24,6 @@ class TagsController extends Controller
             'pagination' => [
                 'pageSize' => 5,
             ],
-
         ]);
         $tags = $dataProvider->getModels();
 

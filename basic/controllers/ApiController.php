@@ -1287,7 +1287,7 @@ class ApiController extends Controller
     public function validateEventId($queryParams){
 
         $error = new Error;
-        if(!isset($queryParams['id']) || (empty($queryParams['id'])&&$queryParams['id'] !='0' )){
+        if(!isset($queryParams['id']) || (empty($queryParams['id']) && $queryParams['id'] !='0' )){
             $error->error = 'BlankEventId';
             $error->message = 'Event id are required';
             header('Content-Type: application/json; charset=utf-8');
