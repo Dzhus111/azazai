@@ -757,6 +757,25 @@ class ApiController extends Controller
         Gsm::sendMessageThroughGSM($ids, ['cancelEventId' => intval($id)]);
         exit;
     }
+
+    public function actionGetEventTags()
+    {
+        $queryParams = Yii::$app->request->queryParams;
+        $this->validateEventId($queryParams);
+        $eventId = $queryParams['id'];
+        $tags = (new Tags())->getTagsByEvent($eventId);
+        $jsonData = ['Tags' => []];
+
+        foreach ($tags as $row) {
+            $jsonData['Tags'][] = [
+                'tagId'         => $row->tag_id,
+                'tagName'       => $row->tag_name,
+                'eventsCount'   => $row->events_count,
+            ];
+        }
+
+        Data::returnApiData($jsonData);
+    }
         
     public function actionGetEventsList()
     {

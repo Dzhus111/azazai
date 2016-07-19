@@ -46,6 +46,7 @@ $config = [
                 'api/deleteComment' => 'api/delete-comment',
                 'api/updateComment' => 'api/update-comment',
                 'api/getRequestsCount' => 'api/get-requests-count',
+                'api/getEventTags' => 'api/get-event-tags',
                 'list/myEvents' => 'list/my-events',
                 'tags' => 'tags/index',
                 '<controller:\w+>/<id:\d+>' => '<controller>/view',
