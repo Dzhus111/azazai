@@ -5,6 +5,7 @@ use Yii;
 use app\helpers\Data;
 use app\helpers\DataValidator;
 use yii\helpers\Utils;
+use yii\helpers\Url;
 use app\models\Events;
 use app\models\EventsModel;
 use yii\web\Controller;
