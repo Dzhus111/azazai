@@ -1,11 +1,13 @@
 <?php
 namespace yii\helpers;
 use yii\web\Session;
+use Yii;
+
 class OAuthVK {
 
     const APP_ID = 4966821; //ID приложения
     const APP_SECRET = '8XyPLv1r7jOx6ovlVeCO'; //Защищенный ключ
-    const URL_CALLBACK = 'http://events.net/'; //URL сайта до этого скрипта-обработчика
+    const URL_CALLBACK = 'http://azazai.net/events/create'; //URL сайта до этого скрипта-обработчика
     const URL_ACCESS_TOKEN = 'https://oauth.vk.com/access_token';
     const URL_AUTHORIZE = 'https://oauth.vk.com/authorize';
     const URL_GET_PROFILES = 'https://api.vk.com/method/getProfiles';
@@ -26,19 +28,15 @@ class OAuthVK {
         Utils::redirect(self::URL_AUTHORIZE .
             '?client_id=' . self::APP_ID .
             '&scope=offline' .
-            '&redirect_uri=' . urlencode(self::URL_CALLBACK.$path) .
+            '&redirect_uri=' . urldecode(self::URL_CALLBACK) .
             '&response_type=code&display=popup');
     }
     
     public static function getUserIdToken($token){
         
         $url ='https://api.vk.com/method/users.get?access_token='.$token;
-            
-        if (!($res = @file_get_contents($url))) {
-            return false;
-        }
 
-        $user = json_decode($res);
+        $user = self::getVkApiResponce($url);
 
         if (!empty($user->error)) {
             return false;
@@ -63,42 +61,28 @@ class OAuthVK {
             '?client_id=' . self::APP_ID .
             '&client_secret=' . self::APP_SECRET .
             '&code=' .$code .
-            '&redirect_uri=' . urlencode('http://events.net/events/create');
+            '&redirect_uri=' . urlencode('http://azazai.net/events/create');
 
+        $result = self::getVkApiResponce($url);
 
-        if (!($res = @file_get_contents($url))) {
+        if (empty($result->access_token) || empty($result->user_id)) {
             return false;
         }
 
-        $res = json_decode($res);
-        if (empty($res->access_token) || empty($res->user_id)) {
-            return false;
-        }
         $session = new Session;
         $session->open();
-        $session['token'] = $res->access_token;
-        $session['userId'] = $res->user_id;
-
+        $session['token'] = $result->access_token;
+        $session['userId'] = $result->user_id;
         return  true;
     }
 
-    /**
-     * Если данных недостаточно, то посмотрите что можно ещё запросить по этой ссылке
-     * @url https://vk.com/pages.php?o=-1&p=getProfiles
-     */
-     
-     
     public static function getUser() {
 
         $url = self::URL_GET_PROFILES.
             '?uid=' . $_SESSION['userId'] .
             '&access_token=' . $_SESSION['token'];
 
-        if (!($res = @file_get_contents($url))) {
-            return false;
-        }
-
-        $user = json_decode($res);
+        $user = self::getVkApiResponce($url);
 
         if (!empty($user->error)) {
             self::printError($user->error);
@@ -115,5 +99,20 @@ class OAuthVK {
         }
 
         return $user;
+    }
+
+    public static function getVkApiResponce($url) {
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_URL, $url);
+
+        $result = json_decode(curl_exec($ch));
+
+        curl_close($ch);
+
+        return $result;
     }
 }
