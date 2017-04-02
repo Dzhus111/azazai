@@ -9,7 +9,7 @@
        <div class="people-count"><?php echo $model->subscribers_count; ?>/<?php echo $model->required_people_number; ?></div>
     </div>
     <div class="event-element-content">
-        <a href="http://events.net/events/detail?id=<?php echo $model->event_id;?>">
+        <a href="<?php echo Url::to(['events/detail', 'id' => $model->event_id]);?>">
             <?php echo $model->event_name; ?><br />
         </a>
         <div><?php echo $model->description; ?></div>
